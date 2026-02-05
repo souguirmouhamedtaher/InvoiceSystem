@@ -47,6 +47,7 @@ export class InvoiceController {
     @ApiQuery({ name: 'limit', required: false, type: Number })
     @ApiQuery({ name: 'search', required: false, type: String, description: 'Search in username, invoice number, application name' })
     @ApiQuery({ name: 'clientType', required: false, type: String, description: 'Filter by client type' })
+    @ApiQuery({ name: 'invoiceType', required: false, type: String, description: 'Filter by invoice type (selling/buying)' })
     @ApiQuery({ name: 'invoiceStatus', required: false, type: String, description: 'Filter by invoice status' })
     @ApiQuery({ name: 'dateFrom', required: false, type: String, description: 'Filter by start date (YYYY-MM-DD)' })
     @ApiQuery({ name: 'dateTo', required: false, type: String, description: 'Filter by end date (YYYY-MM-DD)' })

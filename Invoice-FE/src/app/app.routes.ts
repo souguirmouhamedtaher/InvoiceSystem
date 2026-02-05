@@ -68,6 +68,12 @@ export const routes: Routes = [
 			),
 	},
 	{
+		path: 'tva-monthly',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./tva/tva-monthly.component').then((m) => m.TvaMonthlyComponent),
+	},
+	{
 		path: 'suppliers',
 		canActivate: [authGuard],
 		loadComponent: () => import('./suppliers').then((m) => m.SupplierListComponent),

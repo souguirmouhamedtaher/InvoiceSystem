@@ -50,6 +50,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'tva-monthly',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'suppliers',
     renderMode: RenderMode.Server,
   },

@@ -18,6 +18,7 @@ export class Invoice extends Base {
 	totalHT: string;
 	totalTax: string;
 	totalDiscount: string;
+	fileUrl?: string;
 	Date: Date;
 	notes: string;
 	typeDevis?: string;

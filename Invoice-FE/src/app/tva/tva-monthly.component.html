@@ -1,0 +1,67 @@
+<section class="tva-monthly">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-TVA-01</p>
+      <h1>TVA mensuelle</h1>
+      <p class="subtitle">Suivez la TVA sur ventes et achats par mois.</p>
+    </div>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Annee</span>
+      <input type="number" min="2000" formControlName="year" placeholder="2026" />
+    </label>
+
+    <label class="field">
+      <span>Mois</span>
+      <input type="number" min="1" max="12" formControlName="month" placeholder="2" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <ng-container *ngIf="!loading() && !errorMessage() && data() as vat">
+    <section class="summary">
+      <div>
+        <strong>TVA ventes</strong>
+        <span>{{ vat.totals.sales.totalTVA | number: '1.2-2' }}</span>
+      </div>
+      <div>
+        <strong>TVA achats</strong>
+        <span>{{ vat.totals.purchases.totalTVA | number: '1.2-2' }}</span>
+      </div>
+      <div>
+        <strong>TVA a payer</strong>
+        <span>{{ vat.totals.summary.vatToPay | number: '1.2-2' }}</span>
+      </div>
+      <div>
+        <strong>Diff TVA</strong>
+        <span>{{ vat.totals.summary.diffTVA | number: '1.2-2' }}</span>
+      </div>
+    </section>
+
+    <section class="breakdown">
+      <h2>Historique</h2>
+      <div class="table">
+        <div class="row header">
+          <span>Mois</span>
+          <span>TVA ventes</span>
+          <span>TVA achats</span>
+          <span>TVA a payer</span>
+          <span>Report</span>
+        </div>
+        <div class="row" *ngFor="let month of vat.monthlyBreakdown">
+          <span>{{ month.month }}</span>
+          <span>{{ month.sales.totalTVA | number: '1.2-2' }}</span>
+          <span>{{ month.purchases.totalTVA | number: '1.2-2' }}</span>
+          <span>{{ month.summary.vatToPay | number: '1.2-2' }}</span>
+          <span>{{ month.summary.carryForwardNextMonth || 0 | number: '1.2-2' }}</span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</section>

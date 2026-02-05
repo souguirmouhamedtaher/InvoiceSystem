@@ -47,6 +47,7 @@ export type Invoice = {
   totalHT: string;
   totalTax: string;
   totalDiscount: string;
+  fileUrl?: string;
   timbre?: number;
   notes?: string;
   clientId?: { _id: string; companyname: string; email: string };
@@ -64,6 +65,7 @@ export type CreateInvoicePayload = {
   AdditionalTaxSettings?: string[];
   Libelle: string[];
   timbre?: number;
+  fileUrl?: string;
   notes?: string;
   clientId?: string;
   supplierId?: string;

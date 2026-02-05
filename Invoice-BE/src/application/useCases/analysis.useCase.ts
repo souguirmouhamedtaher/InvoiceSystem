@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
-import { invoiceStatus } from 'src/domain/enums/invoice.enums';
+import { invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
 
 @Injectable()
 export class AnalysisUseCases {
@@ -24,20 +24,24 @@ export class AnalysisUseCases {
             return dateStr.substring(0, 7); // "YYYY-MM"
         };
 
-        // Process Sales
+        // Process invoices (selling => sales, buying => purchases)
         allInvoices?.forEach((inv) => {
             const key = getMonthKey(inv.dateInvoice);
             if (!monthlyStats.has(key)) {
                 monthlyStats.set(key, this.getDefaultMonthlyData());
             }
             const stats = monthlyStats.get(key);
-            stats.sales.totalHT += parseFloat(inv.totalHT || '0');
-            stats.sales.totalTTC += parseFloat(inv.totalTTC || '0');
-            stats.sales.totalTVA += parseFloat(inv.totalTax || '0');
+
+            const resolvedType = inv.invoiceType || invoiceType.selling;
+            const bucket = resolvedType === invoiceType.buying ? stats.purchases : stats.sales;
+
+            bucket.totalHT += parseFloat(inv.totalHT || '0');
+            bucket.totalTTC += parseFloat(inv.totalTTC || '0');
+            bucket.totalTVA += parseFloat(inv.totalTax || '0');
             if (inv.invoiceStatus === invoiceStatus.paid) {
-                stats.sales.paidCount++;
+                bucket.paidCount++;
             } else {
-                stats.sales.unpaidCount++;
+                bucket.unpaidCount++;
             }
         });
 

@@ -53,6 +53,7 @@ export class InvoiceCreateComponent {
     mycompanyId: ['', [Validators.required]],
     taxSettingsId: ['', [Validators.required]],
     timbre: [1],
+    fileUrl: [''],
     notes: [''],
     lines: this.fb.array<FormGroup>([]),
   });
@@ -256,6 +257,7 @@ export class InvoiceCreateComponent {
       AdditionalTaxSettings: [],
       Libelle: libelleIds,
       timbre: value.timbre ?? 1,
+      fileUrl: value.fileUrl || undefined,
       notes: value.notes || undefined,
       clientId: invoiceType === 'selling' ? value.clientId || undefined : undefined,
       supplierId: invoiceType === 'buying' ? value.supplierId || undefined : undefined,

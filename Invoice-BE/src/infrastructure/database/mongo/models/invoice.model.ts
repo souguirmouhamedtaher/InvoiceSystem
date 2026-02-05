@@ -55,6 +55,9 @@ export class Invoice {
     @Prop()
     totalDiscount: string;
 
+    @Prop()
+    fileUrl?: string;
+
     @Prop({ default: Date.now })
     Date: Date;
 

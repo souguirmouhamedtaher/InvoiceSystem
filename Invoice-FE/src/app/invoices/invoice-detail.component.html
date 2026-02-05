@@ -24,6 +24,13 @@
     </div>
   </div>
 
+  <div class="summary" *ngIf="invoice()?.fileUrl">
+    <div>
+      <strong>Scan facture</strong>
+      <a [href]="invoice()?.fileUrl" target="_blank" rel="noopener">Ouvrir</a>
+    </div>
+  </div>
+
   <div class="lines" *ngIf="invoice()?.Libelle?.length">
     <h2>Lignes</h2>
     <div class="line" *ngFor="let line of invoice()?.Libelle">

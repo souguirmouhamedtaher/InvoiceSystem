@@ -45,7 +45,10 @@ export class MongoDataServices
         this.user = new MongoGenericRepository<User>(this.UserRepository);
         this.files = new MongoGenericRepository<Files>(this.FilesRepository, ["uploadedBy"]);
         this.company = new MongoGenericRepository<Company>(this.CompanyRepository);
-        this.invoice = new MongoGenericRepository<Invoice>(this.InvoiceRepository, ["AdditionalTaxSettings", "Libelle", "clientId", "mycompanyId"]);
+        this.invoice = new MongoGenericRepository<Invoice>(
+            this.InvoiceRepository,
+            ["AdditionalTaxSettings", "Libelle", "clientId", "supplierId", "mycompanyId"]
+        );
         this.libelle = new MongoGenericRepository<Libelle>(this.LibelleRepository, ["TaxSettingsId"]);
         this.TaxSettings = new MongoGenericRepository<TaxSettings>(this.TaxSettingsRepository);
         this.purchaseInvoice = new MongoGenericRepository<PurchaseInvoice>(this.PurchaseInvoiceRepository, ["companyId"]);

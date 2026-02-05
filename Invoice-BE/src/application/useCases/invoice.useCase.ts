@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
 import { Invoice, Libelle } from 'src/domain/entities';
+import { companyType } from 'src/domain/enums/company.enums';
+import { invoiceType } from 'src/domain/enums/invoice.enums';
 import { CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
 import { InvoiceFactory } from '../factoryMapper';
 
@@ -153,6 +155,31 @@ export class InvoiceUseCases {
   }
 
   async createInvoice(invoiceToCreate: CreateInvoiceDto): Promise<Invoice> {
+    const resolvedInvoiceType = invoiceToCreate.invoiceType ?? invoiceType.selling;
+
+    if (resolvedInvoiceType === invoiceType.selling && !invoiceToCreate.clientId) {
+      throw new BadRequestException('Client is required for selling invoices.');
+    }
+
+    if (resolvedInvoiceType === invoiceType.buying && !invoiceToCreate.supplierId) {
+      throw new BadRequestException('Supplier is required for buying invoices.');
+    }
+
+    if (invoiceToCreate.clientId) {
+      const client = await this.dataService.company.get(invoiceToCreate.clientId);
+      if (!client) throw new NotFoundException('Client not found.');
+      if (client.companyType !== companyType.client) {
+        throw new BadRequestException('Selected company is not a client.');
+      }
+    }
+
+    if (invoiceToCreate.supplierId) {
+      const supplier = await this.dataService.company.get(invoiceToCreate.supplierId);
+      if (!supplier) throw new NotFoundException('Supplier not found.');
+      if (supplier.companyType !== companyType.supplier) {
+        throw new BadRequestException('Selected company is not a supplier.');
+      }
+    }
     // Validate that libelles are provided
     if (!invoiceToCreate.Libelle || invoiceToCreate.Libelle.length === 0) {
       throw new BadRequestException('Invoice must have at least one libelle.');

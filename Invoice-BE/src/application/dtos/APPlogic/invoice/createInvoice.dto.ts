@@ -68,6 +68,11 @@ export class CreateInvoiceDto {
   @IsString()
   totalTax?: string;
 
+  @ApiPropertyOptional({ description: 'Uploaded invoice file URL', example: 'https://cdn.example.com/invoices/scan.pdf' })
+  @IsOptional()
+  @IsString()
+  fileUrl?: string;
+
   @ApiPropertyOptional({ description: 'Type de devis (devise) for international invoices' })
   @IsOptional()
   @IsEnum(devisType)

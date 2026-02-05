@@ -158,6 +158,8 @@ export class InvoiceFactory {
       newInvoice.totalTTC = createInvoiceDto.totalTTC;
     }
 
+    if (createInvoiceDto.fileUrl) newInvoice.fileUrl = createInvoiceDto.fileUrl;
+
     // Set default timbre value if not set
     if (typeof newInvoice.timbre === 'undefined') {
       newInvoice.timbre = createInvoiceDto.timbre ?? 1;
@@ -246,6 +248,8 @@ export class InvoiceFactory {
     }
 
     if (updateInvoiceDto.notes) updatedInvoice.notes = updateInvoiceDto.notes;
+
+    if (updateInvoiceDto.fileUrl) updatedInvoice.fileUrl = updateInvoiceDto.fileUrl;
 
     // Update optional client and company references
     if (updateInvoiceDto.clientId) updatedInvoice.clientId = updateInvoiceDto.clientId;
