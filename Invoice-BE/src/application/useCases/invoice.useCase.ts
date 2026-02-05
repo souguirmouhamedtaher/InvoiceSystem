@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { IDataServices } from 'src/domain/abstracts';
 import { Invoice, Libelle } from 'src/domain/entities';
 import { companyType } from 'src/domain/enums/company.enums';
-import { invoiceType } from 'src/domain/enums/invoice.enums';
-import { CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
+import { invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
+import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
 import { InvoiceFactory } from '../factoryMapper';
 
 @Injectable()
@@ -275,7 +275,48 @@ export class InvoiceUseCases {
     }
 
     const invoice = this.invoiceFactory.updateInvoice(invoiceToUpdate, libelles, totals);
+
+    if (totals?.totalTTC) {
+      const paidAmount = Number(existingInvoice.paidAmount || 0);
+      const totalTTC = Number(totals.totalTTC_final || totals.totalTTC);
+      const remainingAmount = Math.max(0, totalTTC - paidAmount);
+      invoice.remainingAmount = remainingAmount;
+    }
     return await this.dataService.invoice.update(id, invoice);
+  }
+
+  async addInvoicePayment(id: string, payload: AddInvoicePaymentDto): Promise<Invoice> {
+    const invoice = await this.dataService.invoice.get(id);
+    if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    const totalTTC = Number(invoice.totalTTC || 0);
+    const paidAmount = Number(invoice.paidAmount || 0);
+    const remainingAmount = Math.max(0, totalTTC - paidAmount);
+
+    if (payload.amount > remainingAmount) {
+      throw new BadRequestException('Payment amount exceeds remaining balance.');
+    }
+
+    const payments = Array.isArray(invoice.payments) ? invoice.payments : [];
+    payments.push({
+      amount: payload.amount,
+      date: payload.date,
+      paymentType: payload.paymentType,
+      proofUrl: payload.proofUrl,
+      notes: payload.notes,
+    });
+
+    const nextPaidAmount = paidAmount + payload.amount;
+    const nextRemainingAmount = Math.max(0, totalTTC - nextPaidAmount);
+
+    const updatePayload = {
+      payments,
+      paidAmount: nextPaidAmount,
+      remainingAmount: nextRemainingAmount,
+      invoiceStatus: nextRemainingAmount === 0 ? invoiceStatus.paid : invoice.invoiceStatus,
+    } as any;
+
+    return await this.dataService.invoice.update(id, updatePayload);
   }
 
   async deleteInvoice(id: string): Promise<boolean> {

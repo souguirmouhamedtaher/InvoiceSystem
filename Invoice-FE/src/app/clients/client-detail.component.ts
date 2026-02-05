@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClientService } from './client.service';
 import { Client } from './client.model';
 
@@ -18,7 +18,8 @@ export class ClientDetailComponent {
 
   constructor(
     private route: ActivatedRoute,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private router: Router
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -33,5 +34,25 @@ export class ClientDetailComponent {
     } else {
       this.errorMessage.set('Client introuvable.');
     }
+  }
+
+  deleteClient(): void {
+    const id = this.clientId();
+    if (!id) {
+      this.errorMessage.set('Client introuvable.');
+      return;
+    }
+
+    if (!confirm('Supprimer ce client ?')) {
+      return;
+    }
+
+    this.clientService.deleteClient(id).subscribe({
+      next: () => this.router.navigate(['/clients']),
+      error: (err) => {
+        const message = err?.error?.message || 'Impossible de supprimer le client.';
+        this.errorMessage.set(message);
+      },
+    });
   }
 }

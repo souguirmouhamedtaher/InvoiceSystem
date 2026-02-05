@@ -13,6 +13,14 @@ export type InvoiceLineInput = {
   unity: 'kg' | 'm' | 'hours' | 'day' | 'article' | 'month' | 'year';
 };
 
+export type InvoicePayment = {
+  amount: number;
+  date: string;
+  paymentType: 'cash' | 'creditCard' | 'bankTransfer' | 'paypal' | 'check' | 'cheque';
+  proofUrl?: string;
+  notes?: string;
+};
+
 export type InvoiceTotals = {
   totalHT: string;
   totalTTC: string;
@@ -50,10 +58,15 @@ export type Invoice = {
   fileUrl?: string;
   timbre?: number;
   notes?: string;
+  payments?: InvoicePayment[];
+  paidAmount?: number;
+  remainingAmount?: number;
   clientId?: { _id: string; companyname: string; email: string };
   supplierId?: { _id: string; companyname: string; email: string };
   mycompanyId?: { _id: string; companyname: string; email: string };
 };
+
+export type AddInvoicePaymentPayload = InvoicePayment;
 
 export type CreateInvoicePayload = {
   username: string;

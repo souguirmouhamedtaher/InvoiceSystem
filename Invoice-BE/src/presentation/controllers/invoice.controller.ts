@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { InvoiceUseCases } from '../../application/useCases';
-import { CreateInvoiceDto, UpdateInvoiceDto } from '../../application/dtos';
+import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../../application/dtos';
 import { Invoice } from '../../domain/entities';
 import { AccessTokenGuard } from '../guards/accessToken.guard';
 
@@ -107,5 +107,15 @@ export class InvoiceController {
     async deleteInvoice(@Param('id') id: string): Promise<{ success: boolean }> {
         const result = await this.invoiceUseCases.deleteInvoice(id);
         return { success: result };
+    }
+
+    @Post(':id/payments')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Add a payment to an invoice' })
+    async addInvoicePayment(
+        @Param('id') id: string,
+        @Body() payload: AddInvoicePaymentDto
+    ): Promise<Invoice> {
+        return this.invoiceUseCases.addInvoicePayment(id, payload);
     }
 }

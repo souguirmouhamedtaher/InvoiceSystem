@@ -13,6 +13,7 @@ export * from './APPlogic/user/updateUserRole.dto'
 
 //invoice dtos
 export * from './APPlogic/invoice/createInvoice.dto'
+export * from './APPlogic/invoice/addInvoicePayment.dto'
 export * from './APPlogic/invoice/updateInvoice.dto'
 export * from './APPlogic/invoice/createLibelle.dto'
 export * from './APPlogic/invoice/updateLibelle.dto'

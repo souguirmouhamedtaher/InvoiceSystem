@@ -49,4 +49,10 @@ export class ClientService {
       .patch<ApiResponse<Client>>(`${environment.apiBaseUrl}/company/${id}`, payload)
       .pipe(map((response) => response.data));
   }
+
+  deleteClient(id: string): Observable<{ success: boolean }> {
+    return this.http
+      .delete<ApiResponse<{ success: boolean }>>(`${environment.apiBaseUrl}/company/${id}`)
+      .pipe(map((response) => response.data));
+  }
 }

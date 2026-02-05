@@ -27,6 +27,7 @@
   <div class="actions">
     <a [routerLink]="['/clients', client()?._id, 'edit']" class="primary">Modifier</a>
     <a routerLink="/clients/new" class="ghost">Ajouter un autre client</a>
+    <button type="button" class="ghost danger" (click)="deleteClient()">Supprimer</button>
   </div>
 </section>
 

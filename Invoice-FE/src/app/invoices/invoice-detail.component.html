@@ -22,6 +22,14 @@
       <strong>Total TTC</strong>
       <span>{{ invoice()?.totalTTC }}</span>
     </div>
+    <div>
+      <strong>Deja paye</strong>
+      <span>{{ invoice()?.paidAmount || 0 | number: '1.2-2' }}</span>
+    </div>
+    <div>
+      <strong>Reste a payer</strong>
+      <span>{{ invoice()?.remainingAmount || 0 | number: '1.2-2' }}</span>
+    </div>
   </div>
 
   <div class="summary" *ngIf="invoice()?.fileUrl">
@@ -44,6 +52,72 @@
       </div>
     </div>
   </div>
+
+  <section class="payments">
+    <h2>Paiements</h2>
+
+    <div class="payment-table" *ngIf="invoice()?.payments?.length; else noPayments">
+      <div class="row header">
+        <span>Date</span>
+        <span>Montant</span>
+        <span>Mode</span>
+        <span>Preuve</span>
+      </div>
+      <div class="row" *ngFor="let payment of invoice()?.payments">
+        <span>{{ payment.date }}</span>
+        <span>{{ payment.amount | number: '1.2-2' }}</span>
+        <span>{{ payment.paymentType }}</span>
+        <span>
+          <a *ngIf="payment.proofUrl" [href]="payment.proofUrl" target="_blank" rel="noopener">Voir</a>
+          <span *ngIf="!payment.proofUrl">-</span>
+        </span>
+      </div>
+    </div>
+
+    <ng-template #noPayments>
+      <div class="empty">Aucun paiement enregistre.</div>
+    </ng-template>
+
+    <form class="payment-form" [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+      <label class="field">
+        <span>Montant</span>
+        <input type="number" min="0" step="0.01" formControlName="amount" />
+      </label>
+
+      <label class="field">
+        <span>Date</span>
+        <input type="date" formControlName="date" />
+      </label>
+
+      <label class="field">
+        <span>Mode</span>
+        <select formControlName="paymentType">
+          <option value="cash">Especes</option>
+          <option value="bankTransfer">Virement</option>
+          <option value="cheque">Cheque</option>
+          <option value="check">Check</option>
+          <option value="creditCard">Carte</option>
+          <option value="paypal">PayPal</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Preuve (URL)</span>
+        <input type="text" formControlName="proofUrl" placeholder="https://..." />
+      </label>
+
+      <label class="field span-2">
+        <span>Notes</span>
+        <textarea rows="2" formControlName="notes"></textarea>
+      </label>
+
+      <div class="error" *ngIf="paymentError()">{{ paymentError() }}</div>
+
+      <button class="primary" type="submit" [disabled]="savingPayment()">
+        {{ savingPayment() ? 'Ajout...' : 'Ajouter un paiement' }}
+      </button>
+    </form>
+  </section>
 
   <a class="ghost" routerLink="/invoices/new">Nouvelle facture</a>
 </section>

@@ -31,4 +31,13 @@ export class Invoice extends Base {
 	supplierId?: any;
 	/** Optional reference to MyCompany (Company) */
 	mycompanyId?: any;
+	payments?: {
+		amount: number;
+		date: string;
+		paymentType: string;
+		proofUrl?: string;
+		notes?: string;
+	}[];
+	paidAmount?: number;
+	remainingAmount?: number;
 }

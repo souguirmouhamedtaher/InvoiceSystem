@@ -1,12 +1,30 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { TaxSettings } from './taxesSettings.model';
-import { clientType, invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
+import { clientType, invoiceStatus, invoiceType, paymentType } from 'src/domain/enums/invoice.enums';
 import { devisType } from 'src/domain/enums/invoice.enums';
 import { Libelle } from './libelle.model';
 import { Company } from './company.model';
 
 export type InvoiceDocument = Invoice & Document;
+
+@Schema({ _id: false })
+export class InvoicePayment {
+    @Prop({ required: true })
+    amount: number;
+
+    @Prop({ required: true })
+    date: string;
+
+    @Prop({ enum: paymentType, required: true })
+    paymentType: paymentType;
+
+    @Prop()
+    proofUrl?: string;
+
+    @Prop()
+    notes?: string;
+}
 
 @Schema()
 export class Invoice {
@@ -83,6 +101,15 @@ export class Invoice {
 
     @Prop()
     notes: string;
+
+    @Prop({ type: [InvoicePayment], default: [] })
+    payments: InvoicePayment[];
+
+    @Prop({ default: 0 })
+    paidAmount: number;
+
+    @Prop({ default: 0 })
+    remainingAmount: number;
 
     @Prop()
     isDeleted: boolean;

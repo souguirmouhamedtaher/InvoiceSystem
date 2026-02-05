@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ClientService } from '../clients/client.service';
 import { Client } from '../clients/client.model';
 
@@ -18,7 +18,8 @@ export class SupplierDetailComponent {
 
   constructor(
     private route: ActivatedRoute,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private router: Router
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -33,5 +34,25 @@ export class SupplierDetailComponent {
     } else {
       this.errorMessage.set('Fournisseur introuvable.');
     }
+  }
+
+  deleteSupplier(): void {
+    const id = this.supplierId();
+    if (!id) {
+      this.errorMessage.set('Fournisseur introuvable.');
+      return;
+    }
+
+    if (!confirm('Supprimer ce fournisseur ?')) {
+      return;
+    }
+
+    this.clientService.deleteClient(id).subscribe({
+      next: () => this.router.navigate(['/suppliers']),
+      error: (err) => {
+        const message = err?.error?.message || 'Impossible de supprimer le fournisseur.';
+        this.errorMessage.set(message);
+      },
+    });
   }
 }

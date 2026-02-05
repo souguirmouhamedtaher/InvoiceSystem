@@ -4,6 +4,7 @@ import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../core/api-response';
 import { environment } from '../../environments/environment';
 import {
+  AddInvoicePaymentPayload,
   CreateInvoicePayload,
   Invoice,
   InvoiceCalculatePayload,
@@ -57,6 +58,12 @@ export class InvoiceService {
   getInvoiceById(id: string): Observable<Invoice> {
     return this.http
       .get<ApiResponse<Invoice>>(`${environment.apiBaseUrl}/invoice/${id}`)
+      .pipe(map((response) => response.data));
+  }
+
+  addInvoicePayment(id: string, payload: AddInvoicePaymentPayload): Observable<Invoice> {
+    return this.http
+      .post<ApiResponse<Invoice>>(`${environment.apiBaseUrl}/invoice/${id}/payments`, payload)
       .pipe(map((response) => response.data));
   }
 }

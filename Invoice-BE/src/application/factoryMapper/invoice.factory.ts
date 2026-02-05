@@ -179,6 +179,11 @@ export class InvoiceFactory {
 
     if (createInvoiceDto.notes) newInvoice.notes = createInvoiceDto.notes;
 
+    newInvoice.payments = [];
+    newInvoice.paidAmount = 0;
+    const totalToPay = parseFloat(newInvoice.totalTTC || '0');
+    newInvoice.remainingAmount = Number.isFinite(totalToPay) ? totalToPay : 0;
+
     // Set optional client and company references
     if (createInvoiceDto.clientId) newInvoice.clientId = createInvoiceDto.clientId;
     if (createInvoiceDto.supplierId) newInvoice.supplierId = createInvoiceDto.supplierId;
