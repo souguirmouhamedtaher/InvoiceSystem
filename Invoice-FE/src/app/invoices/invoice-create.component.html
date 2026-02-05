@@ -2,16 +2,18 @@
   <header class="page-header">
     <div>
       <p class="kicker">US-VENTE-04</p>
-      <h1>Nouvelle facture</h1>
+      <h1>{{ form.value.invoiceType === 'buying' ? 'Nouvelle facture d\'achat' : 'Nouvelle facture de vente' }}</h1>
       <p class="subtitle">Saisissez les informations et lignes de facturation.</p>
     </div>
-    <a class="ghost" routerLink="/clients">Voir clients</a>
+    <a class="ghost" [routerLink]="form.value.invoiceType === 'buying' ? '/suppliers' : '/clients'">
+      {{ form.value.invoiceType === 'buying' ? 'Voir fournisseurs' : 'Voir clients' }}
+    </a>
   </header>
 
   <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
     <div class="grid">
       <label class="field">
-        <span>Contact client</span>
+        <span>Contact</span>
         <input type="text" formControlName="username" placeholder="Nom du contact" />
       </label>
 
@@ -21,11 +23,29 @@
       </label>
 
       <label class="field">
+        <span>Type de facture</span>
+        <select formControlName="invoiceType">
+          <option value="selling">Vente (client)</option>
+          <option value="buying">Achat (fournisseur)</option>
+        </select>
+      </label>
+
+      <label class="field" *ngIf="form.value.invoiceType !== 'buying'">
         <span>Client</span>
         <select formControlName="clientId">
           <option value="">Selectionner</option>
           <option *ngFor="let client of clients()" [value]="client._id">
             {{ client.companyname }}
+          </option>
+        </select>
+      </label>
+
+      <label class="field" *ngIf="form.value.invoiceType === 'buying'">
+        <span>Fournisseur</span>
+        <select formControlName="supplierId">
+          <option value="">Selectionner</option>
+          <option *ngFor="let supplier of suppliers()" [value]="supplier._id">
+            {{ supplier.companyname }}
           </option>
         </select>
       </label>
@@ -40,7 +60,7 @@
         </select>
       </label>
 
-      <label class="field">
+      <label class="field" *ngIf="form.value.invoiceType !== 'buying'">
         <span>Type client</span>
         <select formControlName="clientType">
           <option value="national">National</option>
@@ -50,17 +70,6 @@
 
       <label class="field">
         <span>Mode de paiement</span>
-        <select formControlName="paymentType">
-          <option value="cash">Especes</option>
-          <option value="creditCard">Carte</option>
-          <option value="bankTransfer">Virement</option>
-          <option value="paypal">PayPal</option>
-          <option value="check">Cheque</option>
-          <option value="cheque">Cheque (FR)</option>
-        </select>
-      </label>
-
-      <label class="field">
         <span>Taxe (TVA)</span>
         <select formControlName="taxSettingsId">
           <option value="">Selectionner</option>

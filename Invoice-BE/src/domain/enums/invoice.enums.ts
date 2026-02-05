@@ -27,3 +27,8 @@ export enum devisType {
     GBP = 'GBP',
     // add other currencies as needed
 }
+
+export enum invoiceType {
+    selling = 'selling',
+    buying = 'buying',
+}

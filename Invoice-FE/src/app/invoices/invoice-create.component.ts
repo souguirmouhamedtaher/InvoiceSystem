@@ -19,7 +19,7 @@ import {
   ClientType,
   CreateInvoicePayload,
   InvoiceTotals,
-  PaymentType,
+  InvoiceType,
 } from './invoice.model';
 
 @Component({
@@ -36,6 +36,7 @@ export class InvoiceCreateComponent {
   protected readonly totals = signal<InvoiceTotals | null>(null);
 
   protected readonly clients = signal<Client[]>([]);
+  protected readonly suppliers = signal<Client[]>([]);
   protected readonly myCompanies = signal<Client[]>([]);
   protected readonly taxes = signal<TaxSetting[]>([]);
 
@@ -45,9 +46,10 @@ export class InvoiceCreateComponent {
     username: ['', [Validators.required, Validators.minLength(2)]],
     dateInvoice: [this.today(), [Validators.required]],
     applicationName: [''],
-    paymentType: ['cash'],
     clientType: ['national'],
-    clientId: ['', [Validators.required]],
+    invoiceType: ['selling'],
+    clientId: [''],
+    supplierId: [''],
     mycompanyId: ['', [Validators.required]],
     taxSettingsId: ['', [Validators.required]],
     timbre: [1],
@@ -114,6 +116,16 @@ export class InvoiceCreateComponent {
       return;
     }
 
+    const invoiceType = (this.form.value.invoiceType || 'selling') as InvoiceType;
+    if (invoiceType === 'selling' && !this.form.value.clientId) {
+      this.errorMessage.set('Selectionnez un client pour la facture de vente.');
+      return;
+    }
+    if (invoiceType === 'buying' && !this.form.value.supplierId) {
+      this.errorMessage.set('Selectionnez un fournisseur pour la facture d\'achat.');
+      return;
+    }
+
     this.saving.set(true);
 
     this.createLibelles()
@@ -140,12 +152,14 @@ export class InvoiceCreateComponent {
     this.loading.set(true);
 
     const clients$ = this.clientService.getClients({ page: 1, limit: 100, companyType: 'client' });
+    const suppliers$ = this.clientService.getClients({ page: 1, limit: 100, companyType: 'supplier' });
     const companies$ = this.clientService.getClients({ page: 1, limit: 100, companyType: 'mycompany' });
     const taxes$ = this.taxSettingsService.getActiveTaxSettings();
 
-    forkJoin([clients$, companies$, taxes$]).subscribe({
-      next: ([clients, companies, taxes]) => {
+    forkJoin([clients$, suppliers$, companies$, taxes$]).subscribe({
+      next: ([clients, suppliers, companies, taxes]) => {
         this.clients.set(clients.companies);
+        this.suppliers.set(suppliers.companies);
         this.myCompanies.set(companies.companies);
         this.taxes.set(taxes);
         this.loading.set(false);
@@ -230,19 +244,21 @@ export class InvoiceCreateComponent {
 
   private buildInvoicePayload(libelleIds: string[]): CreateInvoicePayload {
     const value = this.form.value;
+    const invoiceType = (value.invoiceType || 'selling') as InvoiceType;
 
     return {
       username: value.username || '',
       dateInvoice: value.dateInvoice || '',
       applicationName: value.applicationName || undefined,
-      paymentType: value.paymentType as PaymentType,
       clientType: value.clientType as ClientType,
+      invoiceType,
       invoiceStatus: 'draft',
       AdditionalTaxSettings: [],
       Libelle: libelleIds,
       timbre: value.timbre ?? 1,
       notes: value.notes || undefined,
-      clientId: value.clientId || undefined,
+      clientId: invoiceType === 'selling' ? value.clientId || undefined : undefined,
+      supplierId: invoiceType === 'buying' ? value.supplierId || undefined : undefined,
       mycompanyId: value.mycompanyId || undefined,
     };
   }

@@ -1,7 +1,7 @@
-export type PaymentType = 'cash' | 'creditCard' | 'bankTransfer' | 'paypal' | 'check' | 'cheque';
 export type ClientType = 'national' | 'international';
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 export type DevisType = 'TND' | 'EUR' | 'USD' | 'GBP';
+export type InvoiceType = 'selling' | 'buying';
 
 export type InvoiceLineInput = {
   name: string;
@@ -29,8 +29,8 @@ export type Invoice = {
   username: string;
   dateInvoice: string;
   applicationName?: string;
-  paymentType?: PaymentType;
   clientType: ClientType;
+  invoiceType?: InvoiceType;
   invoiceStatus?: InvoiceStatus;
   AdditionalTaxSettings: Array<{ _id: string; name: string; taxType: string; taxprice: number }>;
   Libelle: Array<{
@@ -50,6 +50,7 @@ export type Invoice = {
   timbre?: number;
   notes?: string;
   clientId?: { _id: string; companyname: string; email: string };
+  supplierId?: { _id: string; companyname: string; email: string };
   mycompanyId?: { _id: string; companyname: string; email: string };
 };
 
@@ -57,14 +58,15 @@ export type CreateInvoicePayload = {
   username: string;
   dateInvoice: string;
   applicationName?: string;
-  paymentType?: PaymentType;
   clientType: ClientType;
+  invoiceType?: InvoiceType;
   invoiceStatus?: InvoiceStatus;
   AdditionalTaxSettings?: string[];
   Libelle: string[];
   timbre?: number;
   notes?: string;
   clientId?: string;
+  supplierId?: string;
   mycompanyId?: string;
 };
 
@@ -74,3 +76,4 @@ export type InvoiceListResponse = {
   invoices: Invoice[];
   totalInvoices: number;
 };
+

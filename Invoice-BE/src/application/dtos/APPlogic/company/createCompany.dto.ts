@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -97,6 +98,21 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsString()
   companySubSector?: string;
+
+  @ApiPropertyOptional({ description: 'Supplier type', example: 'local' })
+  @IsOptional()
+  @IsString()
+  supplierType?: string;
+
+  @ApiPropertyOptional({ description: 'Accounting email for supplier', example: 'accounting@acme.tn' })
+  @IsOptional()
+  @IsEmail()
+  accountingEmail?: string;
+
+  @ApiPropertyOptional({ description: 'VAT included for supplier invoices', example: true })
+  @IsOptional()
+  @IsBoolean()
+  vatIncluded?: boolean;
 
   @ApiPropertyOptional({ description: 'Country', example: 'Tunisia' })
   @IsOptional()

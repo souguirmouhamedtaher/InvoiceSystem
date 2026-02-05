@@ -1,5 +1,5 @@
 import { Base } from './base.entity';
-import { paymentType, clientType, invoiceStatus } from '../enums/invoice.enums';
+import { clientType, invoiceStatus, invoiceType } from '../enums/invoice.enums';
 import { TaxSettings } from './taxesSettings.entity';
 import { Libelle } from './libelle.entity';
 import { Company } from './company.entity';
@@ -8,8 +8,8 @@ export class Invoice extends Base {
 	username: string;
 	dateInvoice: string;
 	applicationName: string;
-	paymentType: paymentType;
 	clientType: clientType;
+	invoiceType?: invoiceType;
 	invoiceStatus: invoiceStatus;
 	AdditionalTaxSettings: TaxSettings[];
 	Libelle: Libelle[];
@@ -26,6 +26,8 @@ export class Invoice extends Base {
 	timbre?: number;
 	/** Optional reference to Client (Company) */
 	clientId?:  any;
+	/** Optional reference to Supplier (Company) */
+	supplierId?: any;
 	/** Optional reference to MyCompany (Company) */
 	mycompanyId?: any;
 }

@@ -7,11 +7,12 @@ export const routes: Routes = [
 		pathMatch: 'full',
 		redirectTo: 'clients',
 	},
-		{
-			path: 'clients',
-			canActivate: [authGuard],
-			loadComponent: () => import('./clients/client-list.component').then((m) => m.ClientListComponent),
-		},
+	{
+		path: 'clients',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./clients/client-list.component').then((m) => m.ClientListComponent),
+	},
 	{
 		path: 'login',
 		loadComponent: () => import('./auth').then((m) => m.LoginComponent),
@@ -65,6 +66,28 @@ export const routes: Routes = [
 			import('./tax-settings/tax-settings-create.component').then(
 				(m) => m.TaxSettingsCreateComponent
 			),
+	},
+	{
+		path: 'suppliers',
+		canActivate: [authGuard],
+		loadComponent: () => import('./suppliers').then((m) => m.SupplierListComponent),
+	},
+	{
+		path: 'suppliers/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./suppliers').then((m) => m.SupplierCreateComponent),
+	},
+	{
+		path: 'suppliers/:id',
+		canActivate: [authGuard],
+		loadComponent: () => import('./suppliers').then((m) => m.SupplierDetailComponent),
+	},
+	{
+		path: 'invoices',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./invoices/invoice-list.component').then((m) => m.InvoiceListComponent),
 	},
 	{
 		path: 'invoices/new',

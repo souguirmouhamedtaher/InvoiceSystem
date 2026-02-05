@@ -1,8 +1,12 @@
 <section class="invoice-detail" *ngIf="invoice(); else loading">
   <header>
-    <p class="kicker">Facture</p>
+    <p class="kicker">{{ invoice()?.invoiceType === 'buying' ? 'Facture d\'achat' : 'Facture de vente' }}</p>
     <h1>{{ invoice()?.invoiceNumber }}</h1>
-    <p class="subtitle">{{ invoice()?.clientId?.companyname }}</p>
+    <p class="subtitle">
+      {{ invoice()?.invoiceType === 'buying'
+        ? (invoice()?.supplierId?.companyname || 'Fournisseur inconnu')
+        : (invoice()?.clientId?.companyname || 'Client inconnu') }}
+    </p>
   </header>
 
   <div class="summary">

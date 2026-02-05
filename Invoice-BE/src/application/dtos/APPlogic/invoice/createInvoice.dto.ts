@@ -6,7 +6,7 @@ import {
   IsArray,
   IsEnum,
 } from 'class-validator';
-import { clientType, paymentType, invoiceStatus, devisType } from 'src/domain/enums/invoice.enums';
+import { clientType, invoiceStatus, devisType, invoiceType } from 'src/domain/enums/invoice.enums';
 
 export class CreateInvoiceDto {
   @ApiProperty({ description: 'Invoice username (payer or contact)', example: 'John Doe' })
@@ -22,13 +22,14 @@ export class CreateInvoiceDto {
   @IsString()
   applicationName?: string;
 
-  @ApiProperty({ description: 'Payment type', example: 'creditCard' })
-  @IsEnum(paymentType)
-  paymentType?: paymentType;
-
   @ApiProperty({ description: 'Client type (international/national)', example: 'national' })
   @IsEnum(clientType)
   clientType: clientType;
+
+  @ApiPropertyOptional({ description: 'Invoice type (selling or buying)', example: 'selling' })
+  @IsOptional()
+  @IsEnum(invoiceType)
+  invoiceType?: invoiceType;
 
   @ApiPropertyOptional({ description: 'Invoice status', example: 'draft' })
   @IsOptional()
@@ -96,6 +97,11 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsString()
   clientId?: string;
+
+  @ApiPropertyOptional({ description: 'Supplier ID (ObjectId string) - optional reference to supplier', example: '64b7c0f1a2b4c3d4e5f67900' })
+  @IsOptional()
+  @IsString()
+  supplierId?: string;
 
   @ApiPropertyOptional({ description: 'My Company ID (ObjectId string) - optional reference to company', example: '64b7c0f1a2b4c3d4e5f67893' })
   @IsOptional()

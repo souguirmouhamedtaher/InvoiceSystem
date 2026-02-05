@@ -18,6 +18,10 @@ export class InvoiceDetailComponent {
   private route = inject(ActivatedRoute);
 
   constructor(private invoiceService: InvoiceService) {
+    this.loadInvoice();
+  }
+
+  private loadInvoice(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.invoiceService.getInvoiceById(id).subscribe({

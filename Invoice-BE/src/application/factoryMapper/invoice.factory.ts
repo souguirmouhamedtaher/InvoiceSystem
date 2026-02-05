@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { Invoice } from 'src/domain/entities';
+import { invoiceType } from 'src/domain/enums/invoice.enums';
 import { CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
 
 @Injectable()
@@ -132,8 +133,8 @@ export class InvoiceFactory {
     newInvoice.username = createInvoiceDto.username;
     newInvoice.dateInvoice = createInvoiceDto.dateInvoice;
     if (createInvoiceDto.applicationName) newInvoice.applicationName = createInvoiceDto.applicationName;
-    if (createInvoiceDto.paymentType) newInvoice.paymentType = createInvoiceDto.paymentType;
     newInvoice.clientType = createInvoiceDto.clientType;
+    newInvoice.invoiceType = createInvoiceDto.invoiceType ?? invoiceType.selling;
     if (createInvoiceDto.invoiceStatus) newInvoice.invoiceStatus = createInvoiceDto.invoiceStatus;
 
     // Ajout international: typeDevis et montantInternational
@@ -178,6 +179,7 @@ export class InvoiceFactory {
 
     // Set optional client and company references
     if (createInvoiceDto.clientId) newInvoice.clientId = createInvoiceDto.clientId;
+    if (createInvoiceDto.supplierId) newInvoice.supplierId = createInvoiceDto.supplierId;
     if (createInvoiceDto.mycompanyId) newInvoice.mycompanyId = createInvoiceDto.mycompanyId;
 
     newInvoice.Date = new Date();
@@ -204,8 +206,8 @@ export class InvoiceFactory {
     if (updateInvoiceDto.username) updatedInvoice.username = updateInvoiceDto.username;
     if (updateInvoiceDto.dateInvoice) updatedInvoice.dateInvoice = updateInvoiceDto.dateInvoice;
     if (updateInvoiceDto.applicationName) updatedInvoice.applicationName = updateInvoiceDto.applicationName;
-    if (updateInvoiceDto.paymentType) updatedInvoice.paymentType = updateInvoiceDto.paymentType;
     if (updateInvoiceDto.clientType) updatedInvoice.clientType = updateInvoiceDto.clientType;
+    if (updateInvoiceDto.invoiceType) updatedInvoice.invoiceType = updateInvoiceDto.invoiceType;
     if (updateInvoiceDto.invoiceStatus) updatedInvoice.invoiceStatus = updateInvoiceDto.invoiceStatus;
 
     // Ajout international: typeDevis et montantInternational
@@ -247,6 +249,7 @@ export class InvoiceFactory {
 
     // Update optional client and company references
     if (updateInvoiceDto.clientId) updatedInvoice.clientId = updateInvoiceDto.clientId;
+    if (updateInvoiceDto.supplierId) updatedInvoice.supplierId = updateInvoiceDto.supplierId;
     if (updateInvoiceDto.mycompanyId) updatedInvoice.mycompanyId = updateInvoiceDto.mycompanyId;
 
     updatedInvoice.updatedAt = new Date();

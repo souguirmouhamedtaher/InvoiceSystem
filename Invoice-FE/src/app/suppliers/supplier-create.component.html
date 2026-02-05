@@ -1,0 +1,90 @@
+<section class="supplier-create">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-ACHAT-01</p>
+      <h1>Creer un fournisseur</h1>
+      <p class="subtitle">Ajoutez vos fournisseurs pour gerer vos achats.</p>
+    </div>
+    <div class="badge">Fournisseur</div>
+  </header>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <label class="field">
+        <span>Raison sociale</span>
+        <input type="text" formControlName="companyname" placeholder="Ex: Atlas Distribution" />
+        <small *ngIf="form.get('companyname')?.touched && form.get('companyname')?.invalid">
+          Ce champ est obligatoire.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="contact@fournisseur.com" />
+        <small *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+          Entrez un email valide.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Email comptabilite</span>
+        <input type="email" formControlName="accountingEmail" placeholder="compta@fournisseur.com" />
+      </label>
+
+      <label class="field">
+        <span>Type fournisseur</span>
+        <input type="text" formControlName="supplierType" placeholder="Local, grossiste..." />
+      </label>
+
+      <label class="field">
+        <span>TVA incluse</span>
+        <select formControlName="vatIncluded">
+          <option [ngValue]="false">Non</option>
+          <option [ngValue]="true">Oui</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Telephone(s)</span>
+        <input type="text" formControlName="phonesRaw" placeholder="+21612345678, +21698765432" />
+        <small *ngIf="form.get('phonesRaw')?.touched && form.get('phonesRaw')?.invalid">
+          Ajoutez au moins un numero.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Adresse</span>
+        <input type="text" formControlName="address" placeholder="12 Avenue Habib Bourguiba" />
+        <small *ngIf="form.get('address')?.touched && form.get('address')?.invalid">
+          L'adresse est obligatoire.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Ville</span>
+        <input type="text" formControlName="city" placeholder="Tunis" />
+      </label>
+
+      <label class="field">
+        <span>Pays</span>
+        <input type="text" formControlName="country" placeholder="Tunisie" />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Notes</span>
+      <textarea rows="3" formControlName="notes" placeholder="Notes internes"></textarea>
+    </label>
+
+    <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+    <div class="actions">
+      <button class="ghost" type="button" [disabled]="saving()" (click)="form.reset({ vatIncluded: false })">
+        Effacer
+      </button>
+      <button class="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</section>

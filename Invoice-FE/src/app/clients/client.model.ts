@@ -1,4 +1,4 @@
-export type CompanyType = 'mycompany' | 'client';
+export type CompanyType = 'mycompany' | 'client' | 'supplier';
 
 export type Client = {
   _id: string;
@@ -13,6 +13,9 @@ export type Client = {
   ResponsibleName?: string;
   ResponsibleEmail?: string;
   ResponsiblePhone?: string;
+  supplierType?: string;
+  accountingEmail?: string;
+  vatIncluded?: boolean;
 };
 
 export type CreateClientPayload = {
@@ -27,6 +30,9 @@ export type CreateClientPayload = {
   ResponsibleName?: string;
   ResponsibleEmail?: string;
   ResponsiblePhone?: string;
+  supplierType?: string;
+  accountingEmail?: string;
+  vatIncluded?: boolean;
 };
 
 export type ClientListResponse = {

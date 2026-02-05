@@ -18,6 +18,9 @@ export class Company extends Base {
     ResponsiblePhone: string;
     companySector: string;
     companySubSector: string;
+    supplierType?: string;
+    accountingEmail?: string;
+    vatIncluded?: boolean;
     country: string;
     city: string;
     notes: string;

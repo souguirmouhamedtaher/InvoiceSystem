@@ -23,6 +23,9 @@ export class CompanyFactory {
     if (createCompanyDto.ResponsiblePhone) newCompany.ResponsiblePhone = createCompanyDto.ResponsiblePhone.trim();
     if (createCompanyDto.companySector) newCompany.companySector = createCompanyDto.companySector.trim();
     if (createCompanyDto.companySubSector) newCompany.companySubSector = createCompanyDto.companySubSector.trim();
+    if (createCompanyDto.supplierType) newCompany.supplierType = createCompanyDto.supplierType.trim();
+    if (createCompanyDto.accountingEmail) newCompany.accountingEmail = createCompanyDto.accountingEmail.trim().toLowerCase();
+    if (createCompanyDto.vatIncluded !== undefined) newCompany.vatIncluded = createCompanyDto.vatIncluded;
     if (createCompanyDto.country) newCompany.country = createCompanyDto.country.trim();
     if (createCompanyDto.city) newCompany.city = createCompanyDto.city.trim();
     if (createCompanyDto.notes) newCompany.notes = createCompanyDto.notes.trim();
@@ -52,6 +55,9 @@ export class CompanyFactory {
     if (updateCompanyDto.ResponsiblePhone) updatedCompany.ResponsiblePhone = updateCompanyDto.ResponsiblePhone.trim();
     if (updateCompanyDto.companySector) updatedCompany.companySector = updateCompanyDto.companySector.trim();
     if (updateCompanyDto.companySubSector) updatedCompany.companySubSector = updateCompanyDto.companySubSector.trim();
+    if (updateCompanyDto.supplierType) updatedCompany.supplierType = updateCompanyDto.supplierType.trim();
+    if (updateCompanyDto.accountingEmail) updatedCompany.accountingEmail = updateCompanyDto.accountingEmail.trim().toLowerCase();
+    if (updateCompanyDto.vatIncluded !== undefined) updatedCompany.vatIncluded = updateCompanyDto.vatIncluded;
     if (updateCompanyDto.country) updatedCompany.country = updateCompanyDto.country.trim();
     if (updateCompanyDto.city) updatedCompany.city = updateCompanyDto.city.trim();
     if (updateCompanyDto.notes) updatedCompany.notes = updateCompanyDto.notes.trim();

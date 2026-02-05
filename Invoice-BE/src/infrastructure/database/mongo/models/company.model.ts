@@ -58,6 +58,15 @@ export class Company {
 
     @Prop()
     companySubSector: string;
+
+    @Prop()
+    supplierType: string;
+
+    @Prop()
+    accountingEmail: string;
+
+    @Prop()
+    vatIncluded: boolean;
         
     @Prop()
     country: string;

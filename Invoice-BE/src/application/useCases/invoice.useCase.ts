@@ -32,10 +32,10 @@ export class InvoiceUseCases {
           orQueries.push({ applicationName: searchRegex });
         } else if (key === 'clientType' && value) {
           query.clientType = value;
-        } else if (key === 'paymentType' && value) {
-          query.paymentType = value;
         } else if (key === 'invoiceStatus' && value) {
           query.invoiceStatus = value;
+        } else if (key === 'invoiceType' && value) {
+          query.invoiceType = value;
         } else if (key === 'dateFrom' && value) {
           query.dateInvoice = { ...query.dateInvoice, $gte: value };
         } else if (key === 'dateTo' && value) {

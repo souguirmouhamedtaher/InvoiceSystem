@@ -50,6 +50,22 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'suppliers',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'suppliers/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'suppliers/:id',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'invoices',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'invoices/new',
     renderMode: RenderMode.Server,
   },

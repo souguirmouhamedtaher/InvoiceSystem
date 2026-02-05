@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../core/api-response';
@@ -7,6 +7,7 @@ import {
   CreateInvoicePayload,
   Invoice,
   InvoiceCalculatePayload,
+  InvoiceListResponse,
   InvoiceTotals,
 } from './invoice.model';
 
@@ -23,6 +24,33 @@ export class InvoiceService {
   createInvoice(payload: CreateInvoicePayload): Observable<Invoice> {
     return this.http
       .post<ApiResponse<Invoice>>(`${environment.apiBaseUrl}/invoice`, payload)
+      .pipe(map((response) => response.data));
+  }
+
+  getInvoices(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    clientType?: string;
+    invoiceType?: string;
+    invoiceStatus?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Observable<InvoiceListResponse> {
+    const query = new HttpParams({
+      fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
+        if (value === undefined || value === null || value === '') {
+          return acc;
+        }
+        acc[key] = String(value);
+        return acc;
+      }, {}),
+    });
+
+    return this.http
+      .get<ApiResponse<InvoiceListResponse>>(`${environment.apiBaseUrl}/invoice`, {
+        params: query,
+      })
       .pipe(map((response) => response.data));
   }
 

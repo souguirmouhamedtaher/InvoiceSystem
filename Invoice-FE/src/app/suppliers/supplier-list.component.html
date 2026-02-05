@@ -1,0 +1,55 @@
+<section class="supplier-list">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-ACHAT-01</p>
+      <h1>Fournisseurs</h1>
+      <p class="subtitle">Parcourez votre base fournisseurs et retrouvez rapidement une fiche.</p>
+    </div>
+    <a class="primary" routerLink="/suppliers/new">Nouveau fournisseur</a>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Recherche</span>
+      <input type="text" formControlName="search" placeholder="Nom, email, ville" />
+    </label>
+
+    <label class="field">
+      <span>Ville</span>
+      <input type="text" formControlName="city" placeholder="Tunis" />
+    </label>
+
+    <label class="field">
+      <span>Pays</span>
+      <input type="text" formControlName="country" placeholder="Tunisie" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <div class="cards" *ngIf="!loading() && !errorMessage()">
+    <article class="card" *ngFor="let supplier of suppliers()">
+      <div class="card-header">
+        <div>
+          <h3>{{ supplier.companyname }}</h3>
+          <p>{{ supplier.email }}</p>
+        </div>
+        <span class="pill">{{ supplier.companyType }}</span>
+      </div>
+      <div class="card-body">
+        <p>{{ supplier.address }}</p>
+        <p *ngIf="supplier.city || supplier.country">{{ supplier.city }} {{ supplier.country }}</p>
+      </div>
+      <a class="link" [routerLink]="['/suppliers', supplier._id]">Voir fiche</a>
+    </article>
+  </div>
+
+  <footer class="pager" *ngIf="!loading() && !errorMessage()">
+    <button class="ghost" type="button" (click)="previousPage()" [disabled]="page() === 1">Precedent</button>
+    <span>Page {{ page() }} / {{ totalPages }}</span>
+    <button class="ghost" type="button" (click)="nextPage()" [disabled]="page() === totalPages">Suivant</button>
+  </footer>
+</section>

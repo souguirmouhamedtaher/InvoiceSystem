@@ -1,8 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { TaxSettings } from './taxesSettings.model';
-import { paymentType } from 'src/domain/enums/invoice.enums';
-import { clientType, invoiceStatus } from 'src/domain/enums/invoice.enums';
+import { clientType, invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
 import { devisType } from 'src/domain/enums/invoice.enums';
 import { Libelle } from './libelle.model';
 import { Company } from './company.model';
@@ -22,13 +21,11 @@ export class Invoice {
     @Prop()
     applicationName: string;
 
-
-    @Prop({ enum: paymentType })
-    paymentType: paymentType;
-
-
     @Prop({ enum: clientType })
     clientType: clientType;
+
+    @Prop({ enum: invoiceType, default: invoiceType.selling })
+    invoiceType: invoiceType;
 
     @Prop({ enum: invoiceStatus })
     invoiceStatus: invoiceStatus;
@@ -74,6 +71,9 @@ export class Invoice {
 
     @Prop({ type: Types.ObjectId, ref: Company.name, required: false })
     clientId?: Company ;
+
+    @Prop({ type: Types.ObjectId, ref: Company.name, required: false })
+    supplierId?: Company ;
 
     @Prop({ type: Types.ObjectId, ref: Company.name, required: false })
     mycompanyId?: Company ;
