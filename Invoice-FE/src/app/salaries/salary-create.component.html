@@ -1,0 +1,53 @@
+<section class="salary-create">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-PAIE-02</p>
+      <h1>Ajouter un salaire</h1>
+      <p class="subtitle">Enregistrez un salaire mensuel pour un employe.</p>
+    </div>
+    <div class="badge">Salaire</div>
+  </header>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <label class="field">
+        <span>Employe</span>
+        <select formControlName="employeeId">
+          <option value="">Selectionner</option>
+          <option *ngFor="let employee of employees()" [value]="employee._id">
+            {{ employee.firstName }} {{ employee.lastName }}
+          </option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Mois</span>
+        <input type="month" formControlName="month" />
+      </label>
+
+      <label class="field">
+        <span>Salaire net</span>
+        <input type="number" min="0" step="0.01" formControlName="netAmount" />
+      </label>
+
+      <label class="field">
+        <span>Date de paiement</span>
+        <input type="date" formControlName="paidDate" />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Notes</span>
+      <textarea rows="3" formControlName="notes"></textarea>
+    </label>
+
+    <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+    <div class="actions">
+      <button class="ghost" type="button" [disabled]="saving()" (click)="form.reset()">Effacer</button>
+      <button class="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</section>

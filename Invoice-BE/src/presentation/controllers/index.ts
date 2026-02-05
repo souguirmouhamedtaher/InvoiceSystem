@@ -9,5 +9,8 @@ export * from "./libelle.controller"
 export * from "./invoice.controller"
 export * from "./purchaseInvoice.controller"
 export * from "./analysis.controller"
+export * from "./employee.controller"
+export * from "./salary.controller"
+export * from "./cnssPayment.controller"
 
 

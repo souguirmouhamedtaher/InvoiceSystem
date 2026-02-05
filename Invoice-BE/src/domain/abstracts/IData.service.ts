@@ -1,5 +1,5 @@
 import { IRepository } from '.';
-import { Files, User, Company, Invoice, Libelle, TaxSettings, PurchaseInvoice } from '../entities';
+import { Files, User, Company, Invoice, Libelle, TaxSettings, PurchaseInvoice, Employee, Salary, CnssPayment } from '../entities';
 
 export abstract class IDataServices {
     abstract user: IRepository<User>;
@@ -9,4 +9,7 @@ export abstract class IDataServices {
     abstract libelle: IRepository<Libelle>;
     abstract TaxSettings: IRepository<TaxSettings>;
     abstract purchaseInvoice: IRepository<PurchaseInvoice>;
+    abstract employee: IRepository<Employee>;
+    abstract salary: IRepository<Salary>;
+    abstract cnssPayment: IRepository<CnssPayment>;
 }

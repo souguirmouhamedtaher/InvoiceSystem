@@ -14,6 +14,9 @@ import {
     InvoiceController,
     PurchaseInvoiceController,
     AnalysisController,
+    EmployeeController,
+    SalaryController,
+    CnssPaymentController,
 } from './controllers';
 
 @Module({
@@ -28,6 +31,9 @@ import {
         InvoiceController,
         PurchaseInvoiceController,
         AnalysisController,
+        EmployeeController,
+        SalaryController,
+        CnssPaymentController,
     ],
     providers: [AccessTokenStrategy, RefreshTokenStrategy],
 })

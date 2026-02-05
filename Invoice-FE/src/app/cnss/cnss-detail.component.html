@@ -1,0 +1,35 @@
+<section class="cnss-detail" *ngIf="payment(); else loading">
+  <header>
+    <p class="kicker">Paiement CNSS</p>
+    <h1>{{ payment()?.employeeId?.firstName }} {{ payment()?.employeeId?.lastName }}</h1>
+    <p class="subtitle">Mois: {{ payment()?.month }}</p>
+  </header>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Montant</h3>
+      <p>{{ payment()?.amount | number: '1.2-2' }}</p>
+      <p>Date: {{ payment()?.paymentDate }}</p>
+    </article>
+
+    <article class="card" *ngIf="payment()?.notes">
+      <h3>Notes</h3>
+      <p>{{ payment()?.notes }}</p>
+    </article>
+  </div>
+
+  <div class="actions">
+    <a routerLink="/cnss" class="ghost">Retour</a>
+    <a routerLink="/cnss/new" class="primary">Ajouter un paiement</a>
+    <button type="button" class="ghost danger" (click)="deletePayment()">Supprimer</button>
+  </div>
+</section>
+
+<ng-template #loading>
+  <section class="cnss-detail">
+    <div class="card" *ngIf="errorMessage(); else spinner">{{ errorMessage() }}</div>
+    <ng-template #spinner>
+      <div class="card">Chargement...</div>
+    </ng-template>
+  </section>
+</ng-template>

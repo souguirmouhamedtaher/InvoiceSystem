@@ -1,0 +1,45 @@
+<section class="employee-list">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-PAIE-01</p>
+      <h1>Employes</h1>
+      <p class="subtitle">Gerez vos employes et leur statut CNSS.</p>
+    </div>
+    <a class="primary" routerLink="/employees/new">Nouvel employe</a>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Recherche</span>
+      <input type="text" formControlName="search" placeholder="Nom, prenom, email" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <div class="cards" *ngIf="!loading() && !errorMessage()">
+    <article class="card" *ngFor="let employee of employees()">
+      <div class="card-header">
+        <div>
+          <h3>{{ employee.firstName }} {{ employee.lastName }}</h3>
+          <p>{{ employee.email || 'Email non renseigne' }}</p>
+        </div>
+        <span class="pill">CNSS: {{ employee.cnssApplicable ? 'Oui' : 'Non' }}</span>
+      </div>
+      <div class="card-body">
+        <p *ngIf="employee.phone">Tel: {{ employee.phone }}</p>
+        <p *ngIf="employee.notes">{{ employee.notes }}</p>
+      </div>
+      <a class="link" [routerLink]="['/employees', employee._id]">Voir fiche</a>
+    </article>
+  </div>
+
+  <footer class="pager" *ngIf="!loading() && !errorMessage()">
+    <button class="ghost" type="button" (click)="previousPage()" [disabled]="page() === 1">Precedent</button>
+    <span>Page {{ page() }} / {{ totalPages }}</span>
+    <button class="ghost" type="button" (click)="nextPage()" [disabled]="page() === totalPages">Suivant</button>
+  </footer>
+</section>

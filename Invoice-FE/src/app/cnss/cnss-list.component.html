@@ -1,0 +1,54 @@
+<section class="cnss-list">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-PAIE-03</p>
+      <h1>CNSS</h1>
+      <p class="subtitle">Historique des paiements CNSS par employe.</p>
+    </div>
+    <a class="primary" routerLink="/cnss/new">Nouveau paiement</a>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Employe</span>
+      <select formControlName="employeeId">
+        <option value="">Tous</option>
+        <option *ngFor="let employee of employees()" [value]="employee._id">
+          {{ employee.firstName }} {{ employee.lastName }}
+        </option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Mois</span>
+      <input type="month" formControlName="month" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <div class="cards" *ngIf="!loading() && !errorMessage()">
+    <article class="card" *ngFor="let payment of payments()">
+      <div class="card-header">
+        <div>
+          <h3>{{ payment.employeeId.firstName }} {{ payment.employeeId.lastName }}</h3>
+          <p>Mois: {{ payment.month }}</p>
+        </div>
+        <span class="pill">{{ payment.paymentDate }}</span>
+      </div>
+      <div class="card-body">
+        <p>Montant: {{ payment.amount | number: '1.2-2' }}</p>
+      </div>
+      <a class="link" [routerLink]="['/cnss', payment._id]">Voir detail</a>
+    </article>
+  </div>
+
+  <footer class="pager" *ngIf="!loading() && !errorMessage()">
+    <button class="ghost" type="button" (click)="previousPage()" [disabled]="page() === 1">Precedent</button>
+    <span>Page {{ page() }} / {{ totalPages }}</span>
+    <button class="ghost" type="button" (click)="nextPage()" [disabled]="page() === totalPages">Suivant</button>
+  </footer>
+</section>

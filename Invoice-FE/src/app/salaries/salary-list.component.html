@@ -1,0 +1,55 @@
+<section class="salary-list">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-PAIE-02</p>
+      <h1>Salaires</h1>
+      <p class="subtitle">Suivez les salaires mensuels et l'historique des paiements.</p>
+    </div>
+    <a class="primary" routerLink="/salaries/new">Nouveau salaire</a>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Employe</span>
+      <select formControlName="employeeId">
+        <option value="">Tous</option>
+        <option *ngFor="let employee of employees()" [value]="employee._id">
+          {{ employee.firstName }} {{ employee.lastName }}
+        </option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Mois</span>
+      <input type="month" formControlName="month" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <div class="cards" *ngIf="!loading() && !errorMessage()">
+    <article class="card" *ngFor="let salary of salaries()">
+      <div class="card-header">
+        <div>
+          <h3>{{ salary.employeeId.firstName }} {{ salary.employeeId.lastName }}</h3>
+          <p>Mois: {{ salary.month }}</p>
+        </div>
+        <span class="pill">{{ salary.isPaid ? 'Paye' : 'Non paye' }}</span>
+      </div>
+      <div class="card-body">
+        <p>Net: {{ salary.netAmount | number: '1.2-2' }}</p>
+        <p *ngIf="salary.paidDate">Verse le: {{ salary.paidDate }}</p>
+      </div>
+      <a class="link" [routerLink]="['/salaries', salary._id]">Voir detail</a>
+    </article>
+  </div>
+
+  <footer class="pager" *ngIf="!loading() && !errorMessage()">
+    <button class="ghost" type="button" (click)="previousPage()" [disabled]="page() === 1">Precedent</button>
+    <span>Page {{ page() }} / {{ totalPages }}</span>
+    <button class="ghost" type="button" (click)="nextPage()" [disabled]="page() === totalPages">Suivant</button>
+  </footer>
+</section>

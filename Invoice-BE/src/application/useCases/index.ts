@@ -10,6 +10,9 @@ export * from "./libelle.useCase"
 export * from "./invoice.useCase"
 export * from "./purchaseInvoice.useCase"
 export * from "./analysis.useCase"
+export * from "./employee.useCase"
+export * from "./salary.useCase"
+export * from "./cnssPayment.useCase"
 
 
 

@@ -70,6 +70,42 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'employees',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'employees/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'employees/:id',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'salaries',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'salaries/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'salaries/:id',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'cnss',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'cnss/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'cnss/:id',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'invoices',
     renderMode: RenderMode.Server,
   },

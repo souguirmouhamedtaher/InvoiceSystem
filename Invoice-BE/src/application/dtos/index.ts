@@ -28,6 +28,18 @@ export * from './APPlogic/company/updateCompany.dto'
 export * from './APPlogic/purchaseInvoice/createPurchaseInvoice.dto'
 export * from './APPlogic/purchaseInvoice/updatePurchaseInvoice.dto'
 
+// employee dtos
+export * from './APPlogic/employee/createEmployee.dto'
+export * from './APPlogic/employee/updateEmployee.dto'
+
+// salary dtos
+export * from './APPlogic/salary/createSalary.dto'
+export * from './APPlogic/salary/updateSalary.dto'
+
+// cnss dtos
+export * from './APPlogic/cnss/createCnssPayment.dto'
+export * from './APPlogic/cnss/updateCnssPayment.dto'
+
 
 
 //super admin dtos

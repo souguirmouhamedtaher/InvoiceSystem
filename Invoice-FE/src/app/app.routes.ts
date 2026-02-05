@@ -96,6 +96,60 @@ export const routes: Routes = [
 		loadComponent: () => import('./suppliers').then((m) => m.SupplierDetailComponent),
 	},
 	{
+		path: 'employees',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./employees').then((m) => m.EmployeeListComponent),
+	},
+	{
+		path: 'employees/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./employees').then((m) => m.EmployeeCreateComponent),
+	},
+	{
+		path: 'employees/:id',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./employees').then((m) => m.EmployeeDetailComponent),
+	},
+	{
+		path: 'salaries',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./salaries').then((m) => m.SalaryListComponent),
+	},
+	{
+		path: 'salaries/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./salaries').then((m) => m.SalaryCreateComponent),
+	},
+	{
+		path: 'salaries/:id',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./salaries').then((m) => m.SalaryDetailComponent),
+	},
+	{
+		path: 'cnss',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./cnss').then((m) => m.CnssListComponent),
+	},
+	{
+		path: 'cnss/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./cnss').then((m) => m.CnssCreateComponent),
+	},
+	{
+		path: 'cnss/:id',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./cnss').then((m) => m.CnssDetailComponent),
+	},
+	{
 		path: 'invoices',
 		canActivate: [authGuard],
 		loadComponent: () =>

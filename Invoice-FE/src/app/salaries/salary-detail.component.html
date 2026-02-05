@@ -1,0 +1,40 @@
+<section class="salary-detail" *ngIf="salary(); else loading">
+  <header>
+    <p class="kicker">Salaire mensuel</p>
+    <h1>{{ salary()?.employeeId?.firstName }} {{ salary()?.employeeId?.lastName }}</h1>
+    <p class="subtitle">Mois: {{ salary()?.month }}</p>
+  </header>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Montant net</h3>
+      <p>{{ salary()?.netAmount | number: '1.2-2' }}</p>
+      <p *ngIf="salary()?.paidDate">Verse le {{ salary()?.paidDate }}</p>
+    </article>
+
+    <article class="card">
+      <h3>Statut</h3>
+      <p>{{ salary()?.isPaid ? 'Paye' : 'Non paye' }}</p>
+    </article>
+
+    <article class="card" *ngIf="salary()?.notes">
+      <h3>Notes</h3>
+      <p>{{ salary()?.notes }}</p>
+    </article>
+  </div>
+
+  <div class="actions">
+    <a routerLink="/salaries" class="ghost">Retour</a>
+    <a routerLink="/salaries/new" class="primary">Ajouter un salaire</a>
+    <button type="button" class="ghost danger" (click)="deleteSalary()">Supprimer</button>
+  </div>
+</section>
+
+<ng-template #loading>
+  <section class="salary-detail">
+    <div class="card" *ngIf="errorMessage(); else spinner">{{ errorMessage() }}</div>
+    <ng-template #spinner>
+      <div class="card">Chargement...</div>
+    </ng-template>
+  </section>
+</ng-template>

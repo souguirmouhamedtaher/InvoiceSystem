@@ -5,4 +5,7 @@ export * from "./libelle.model"
 export * from "./files.model"
 export * from "./taxesSettings.model"
 export * from "./purchaseInvoice.model"
+export * from "./employee.model"
+export * from "./salary.model"
+export * from "./cnssPayment.model"
 

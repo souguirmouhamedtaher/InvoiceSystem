@@ -7,6 +7,9 @@ export * from "./company.entity"
 export * from "./libelle.entity"
 export * from "./taxesSettings.entity"
 export * from "./purchaseInvoice.entity"
+export * from "./employee.entity"
+export * from "./salary.entity"
+export * from "./cnssPayment.entity"
 
 
 

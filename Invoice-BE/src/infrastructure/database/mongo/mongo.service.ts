@@ -15,6 +15,9 @@ import { Invoice, InvoiceDocument } from './models';
 import { Libelle, LibelleDocument } from './models';
 import { TaxSettings, TaxSettingsDocument } from './models';
 import { PurchaseInvoice, PurchaseInvoiceDocument } from './models';
+import { Employee, EmployeeDocument } from './models';
+import { Salary, SalaryDocument } from './models';
+import { CnssPayment, CnssPaymentDocument } from './models';
 import { MongoGenericRepository } from "./repositories/mongo.repository";
 @Injectable()
 export class MongoDataServices
@@ -26,6 +29,9 @@ export class MongoDataServices
     libelle: MongoGenericRepository<Libelle>;
     TaxSettings: MongoGenericRepository<TaxSettings>;
     purchaseInvoice: MongoGenericRepository<PurchaseInvoice>;
+    employee: MongoGenericRepository<Employee>;
+    salary: MongoGenericRepository<Salary>;
+    cnssPayment: MongoGenericRepository<CnssPayment>;
 
 
 
@@ -37,6 +43,9 @@ export class MongoDataServices
         @InjectModel(Libelle.name) private LibelleRepository: Model<LibelleDocument>,
         @InjectModel(TaxSettings.name) private TaxSettingsRepository: Model<TaxSettingsDocument>,
         @InjectModel(PurchaseInvoice.name) private PurchaseInvoiceRepository: Model<PurchaseInvoiceDocument>,
+        @InjectModel(Employee.name) private EmployeeRepository: Model<EmployeeDocument>,
+        @InjectModel(Salary.name) private SalaryRepository: Model<SalaryDocument>,
+        @InjectModel(CnssPayment.name) private CnssPaymentRepository: Model<CnssPaymentDocument>,
     ) { }
 
 
@@ -52,5 +61,8 @@ export class MongoDataServices
         this.libelle = new MongoGenericRepository<Libelle>(this.LibelleRepository, ["TaxSettingsId"]);
         this.TaxSettings = new MongoGenericRepository<TaxSettings>(this.TaxSettingsRepository);
         this.purchaseInvoice = new MongoGenericRepository<PurchaseInvoice>(this.PurchaseInvoiceRepository, ["companyId"]);
+        this.employee = new MongoGenericRepository<Employee>(this.EmployeeRepository);
+        this.salary = new MongoGenericRepository<Salary>(this.SalaryRepository, ["employeeId"]);
+        this.cnssPayment = new MongoGenericRepository<CnssPayment>(this.CnssPaymentRepository, ["employeeId"]);
     }
 }

@@ -1,0 +1,56 @@
+<section class="employee-create">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-PAIE-01</p>
+      <h1>Ajouter un employe</h1>
+      <p class="subtitle">Enregistrez vos employes et le statut CNSS.</p>
+    </div>
+    <div class="badge">Employe</div>
+  </header>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <label class="field">
+        <span>Prenom</span>
+        <input type="text" formControlName="firstName" placeholder="Amira" />
+      </label>
+
+      <label class="field">
+        <span>Nom</span>
+        <input type="text" formControlName="lastName" placeholder="Ben Salah" />
+      </label>
+
+      <label class="field">
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="amira@company.tn" />
+      </label>
+
+      <label class="field">
+        <span>Telephone</span>
+        <input type="text" formControlName="phone" placeholder="+21612345678" />
+      </label>
+
+      <label class="field">
+        <span>CNSS applicable</span>
+        <select formControlName="cnssApplicable">
+          <option [ngValue]="true">Oui</option>
+          <option [ngValue]="false">Non</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Notes</span>
+      <textarea rows="3" formControlName="notes" placeholder="Notes internes"></textarea>
+    </label>
+
+    <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+    <div class="actions">
+      <button class="ghost" type="button" [disabled]="saving()" (click)="form.reset({ cnssApplicable: false })">Effacer</button>
+      <button class="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,40 @@
+<section class="employee-detail" *ngIf="employee(); else loading">
+  <header>
+    <p class="kicker">Fiche employe</p>
+    <h1>{{ employee()?.firstName }} {{ employee()?.lastName }}</h1>
+    <p class="subtitle">Employe enregistre dans la paie.</p>
+  </header>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Contact</h3>
+      <p>{{ employee()?.email || 'Email non renseigne' }}</p>
+      <p *ngIf="employee()?.phone">Tel: {{ employee()?.phone }}</p>
+    </article>
+
+    <article class="card">
+      <h3>CNSS</h3>
+      <p>Applicable: {{ employee()?.cnssApplicable ? 'Oui' : 'Non' }}</p>
+    </article>
+
+    <article class="card" *ngIf="employee()?.notes">
+      <h3>Notes</h3>
+      <p>{{ employee()?.notes }}</p>
+    </article>
+  </div>
+
+  <div class="actions">
+    <a routerLink="/employees" class="ghost">Retour</a>
+    <a routerLink="/employees/new" class="primary">Ajouter un employe</a>
+    <button type="button" class="ghost danger" (click)="deleteEmployee()">Supprimer</button>
+  </div>
+</section>
+
+<ng-template #loading>
+  <section class="employee-detail">
+    <div class="card" *ngIf="errorMessage(); else spinner">{{ errorMessage() }}</div>
+    <ng-template #spinner>
+      <div class="card">Chargement...</div>
+    </ng-template>
+  </section>
+</ng-template>
