@@ -1,0 +1,20 @@
+<section class="invoice-scan">
+  <header class="page-header">
+    <div>
+      <p class="kicker">QR Facture</p>
+      <h1>Scanner une facture</h1>
+      <p class="subtitle">Importez une photo du QR code pour ouvrir la facture.</p>
+    </div>
+  </header>
+
+  <div class="card">
+    <label class="file-input">
+      <input type="file" accept="image/*" (change)="handleFileChange($event)" />
+      <span>Choisir une image du QR code</span>
+    </label>
+
+    <p class="state" *ngIf="scanning()">Analyse en cours...</p>
+    <p class="state info">Formats supportes: PNG, JPG, WebP.</p>
+    <p class="state error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  </div>
+</section>

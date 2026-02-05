@@ -5,6 +5,7 @@ import { companyType } from 'src/domain/enums/company.enums';
 import { invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
 import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
 import { InvoiceFactory } from '../factoryMapper';
+import { buildInvoicePdfBuffer, InvoicePdfTotals, VatSummaryRow } from '../utils/invoice-pdf';
 
 @Injectable()
 export class InvoiceUseCases {
@@ -324,6 +325,61 @@ export class InvoiceUseCases {
     if (!invoice) throw new NotFoundException('Invoice not found.');
 
     return await this.dataService.invoice.delete(id);
+  }
+
+  async generateInvoicePdf(id: string): Promise<Buffer> {
+    const invoice = await this.dataService.invoice.get(id);
+    if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    const vatMap = new Map<number, { base: number; tva: number }>();
+    const libelles = Array.isArray(invoice.Libelle) ? invoice.Libelle : [];
+
+    for (const line of libelles as any[]) {
+      const base = parseFloat(line.finalprixHT || '0');
+      const ttc = parseFloat(line.finalprixTTC || '0');
+      const tvaAmount = Math.max(0, ttc - base);
+
+      let rate = 0;
+      if (line.TaxSettingsId?.taxprice !== undefined) {
+        rate = Number(line.TaxSettingsId.taxprice);
+      } else if (line.TaxSettingsId) {
+        const taxSetting = await this.dataService.TaxSettings.get(line.TaxSettingsId);
+        rate = taxSetting ? Number(taxSetting.taxprice || 0) : 0;
+      } else if (base > 0) {
+        rate = (tvaAmount / base) * 100;
+      }
+
+      const key = Number(rate.toFixed(2));
+      const existing = vatMap.get(key) || { base: 0, tva: 0 };
+      vatMap.set(key, {
+        base: existing.base + base,
+        tva: existing.tva + tvaAmount,
+      });
+    }
+
+    const vatRows: VatSummaryRow[] = Array.from(vatMap.entries())
+      .map(([rate, values]) => ({ rate, base: values.base, tva: values.tva }))
+      .sort((a, b) => a.rate - b.rate);
+
+    const totals: InvoicePdfTotals = {
+      totalHT: parseFloat(invoice.totalHT || '0'),
+      totalTVA: parseFloat(invoice.totalTax || '0'),
+      timbre: typeof invoice.timbre === 'number' ? invoice.timbre : 0,
+      totalTTC: parseFloat(invoice.totalTTC || '0'),
+    };
+
+    const fromLabel = invoice.mycompanyId?.companyname || 'Ma societe';
+    const toLabel = invoice.invoiceType === invoiceType.buying
+      ? (invoice.supplierId?.companyname || 'Fournisseur')
+      : (invoice.clientId?.companyname || 'Client');
+
+    return buildInvoicePdfBuffer({
+      invoice,
+      totals,
+      vatRows,
+      fromLabel,
+      toLabel,
+    });
   }
 
   /**

@@ -120,6 +120,10 @@
   </section>
 
   <a class="ghost" routerLink="/invoices/new">Nouvelle facture</a>
+  <button class="primary" type="button" (click)="downloadPdf()" [disabled]="downloadingPdf()">
+    {{ downloadingPdf() ? 'Telechargement...' : 'Exporter PDF' }}
+  </button>
+  <div class="error" *ngIf="pdfError()">{{ pdfError() }}</div>
 </section>
 
 <ng-template #loading>

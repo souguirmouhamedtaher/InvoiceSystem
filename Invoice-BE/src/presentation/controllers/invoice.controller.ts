@@ -7,13 +7,16 @@ import {
     Patch,
     Post,
     Query,
-    UseGuards
+    UseGuards,
+    Res,
+    InternalServerErrorException
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { InvoiceUseCases } from '../../application/useCases';
 import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../../application/dtos';
 import { Invoice } from '../../domain/entities';
 import { AccessTokenGuard } from '../guards/accessToken.guard';
+import { Response } from 'express';
 
 @ApiTags('Facturation|Invoice')
 @Controller('invoice')
@@ -87,6 +90,24 @@ export class InvoiceController {
     @ApiBearerAuth()
     async getInvoiceById(@Param('id') id: string): Promise<Invoice> {
         return this.invoiceUseCases.getInvoiceById(id);
+    }
+
+    @Get(':id/pdf')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Download invoice PDF' })
+    async downloadInvoicePdf(@Param('id') id: string, @Res() res: Response) {
+        try {
+            const buffer = await this.invoiceUseCases.generateInvoicePdf(id);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="facture-${id}.pdf"`);
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.end(buffer);
+        } catch (error) {
+            console.error('Invoice PDF error:', error);
+            throw new InternalServerErrorException('Impossible de generer le PDF.');
+        }
     }
 
     @Patch(':id')

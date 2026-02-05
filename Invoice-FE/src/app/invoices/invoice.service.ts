@@ -61,6 +61,12 @@ export class InvoiceService {
       .pipe(map((response) => response.data));
   }
 
+  downloadInvoicePdf(id: string): Observable<Blob> {
+    return this.http.get(`${environment.apiBaseUrl}/invoice/${id}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
   addInvoicePayment(id: string, payload: AddInvoicePaymentPayload): Observable<Invoice> {
     return this.http
       .post<ApiResponse<Invoice>>(`${environment.apiBaseUrl}/invoice/${id}/payments`, payload)

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Facture {{invoiceNumber}}</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        color: #111827;
+        font-size: 12px;
+      }
+      .page {
+        padding: 24px 28px 24px 28px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 18px;
+      }
+      .brand h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.04em;
+      }
+      .brand span {
+        font-size: 10px;
+        color: #6b7280;
+      }
+      .meta {
+        text-align: right;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+      .box {
+        border: 1px solid #111827;
+        padding: 10px 12px;
+        margin-bottom: 18px;
+      }
+      .box-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 6px;
+      }
+      .box-label {
+        width: 110px;
+        font-weight: 700;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #111827;
+        padding: 6px 6px;
+        text-align: left;
+      }
+      th {
+        background: #f3f4f6;
+        font-size: 11px;
+      }
+      .align-right { text-align: right; }
+      .totals {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 14px;
+      }
+      .totals .box { margin: 0; }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        margin-top: 14px;
+      }
+      .text-amount {
+        font-weight: 700;
+      }
+      .qr {
+        width: 120px;
+        height: 120px;
+      }
+      .small {
+        font-size: 10px;
+        color: #6b7280;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header">
+        <div class="brand">
+          <h1>Invoice Studio</h1>
+          <span>Facture</span>
+        </div>
+        <div class="meta">
+          <div><strong>Facture N:</strong> {{invoiceNumber}}</div>
+          <div><strong>Date:</strong> {{date}}</div>
+          <div><strong>Heure:</strong> {{time}}</div>
+          <div><strong>Type:</strong> {{typeLabel}}</div>
+          <div><strong>Sauvegardee le:</strong> {{savedAt}}</div>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="box-row"><span class="box-label">Emetteur:</span><span>{{fromLabel}}</span></div>
+        <div class="box-row"><span class="box-label">Destinataire:</span><span>{{toLabel}}</span></div>
+        <div class="box-row"><span class="box-label">Contact:</span><span>{{contact}}</span></div>
+      </div>
+
+      <div class="section-title">Lignes de facture</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Designation</th>
+            <th>Quantite</th>
+            <th>TVA %</th>
+            <th>P.U HT</th>
+            <th>Total HT</th>
+            <th>Total TTC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each items}}
+          <tr>
+            <td>{{code}}</td>
+            <td>{{designation}}</td>
+            <td class="align-right">{{quantity}}</td>
+            <td class="align-right">{{taxRate}}</td>
+            <td class="align-right">{{unitPrice}}</td>
+            <td class="align-right">{{totalHT}}</td>
+            <td class="align-right">{{totalTTC}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+
+      <div class="section-title">Paiements</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Mode</th>
+            <th>Montant</th>
+            <th>Preuve</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#if payments.length}}
+            {{#each payments}}
+            <tr>
+              <td>{{date}}</td>
+              <td>{{mode}}</td>
+              <td class="align-right">{{amount}}</td>
+              <td>{{proof}}</td>
+            </tr>
+            {{/each}}
+          {{else}}
+            <tr>
+              <td colspan="4" class="small">Aucun paiement enregistre.</td>
+            </tr>
+          {{/if}}
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="box">
+          <div class="section-title">TVA</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Taux</th>
+                <th>Base</th>
+                <th>Montant TVA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each vatRows}}
+              <tr>
+                <td class="align-right">{{rate}}</td>
+                <td class="align-right">{{base}}</td>
+                <td class="align-right">{{tva}}</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        <div class="box">
+          <table>
+            <tbody>
+              <tr><td>Total H.T</td><td class="align-right">{{totals.totalHT}}</td></tr>
+              <tr><td>Montant TVA</td><td class="align-right">{{totals.totalTVA}}</td></tr>
+              <tr><td>Droit de Timbre</td><td class="align-right">{{totals.timbre}}</td></tr>
+              <tr><td><strong>Montant TTC</strong></td><td class="align-right"><strong>{{totals.totalTTC}}</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>
+          <div class="text-amount">Montant en toutes lettres:</div>
+          <div>{{amountText}}</div>
+        </div>
+        <div>
+          <img class="qr" src="{{qrDataUrl}}" alt="QR" />
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -18,6 +18,8 @@ export class InvoiceDetailComponent {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly paymentError = signal<string | null>(null);
   protected readonly savingPayment = signal(false);
+  protected readonly pdfError = signal<string | null>(null);
+  protected readonly downloadingPdf = signal(false);
 
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -97,5 +99,33 @@ export class InvoiceDetailComponent {
           this.paymentError.set(message);
         },
       });
+  }
+
+  downloadPdf(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.pdfError.set('Facture introuvable.');
+      return;
+    }
+
+    this.pdfError.set(null);
+    this.downloadingPdf.set(true);
+
+    this.invoiceService.downloadInvoicePdf(id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `facture-${id}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.downloadingPdf.set(false);
+      },
+      error: (err) => {
+        this.downloadingPdf.set(false);
+        const message = err?.error?.message || 'Impossible de telecharger le PDF.';
+        this.pdfError.set(message);
+      },
+    });
   }
 }
