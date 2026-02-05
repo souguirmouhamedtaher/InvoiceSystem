@@ -5,8 +5,13 @@ export const routes: Routes = [
 	{
 		path: '',
 		pathMatch: 'full',
-		redirectTo: 'clients/new',
+		redirectTo: 'clients',
 	},
+		{
+			path: 'clients',
+			canActivate: [authGuard],
+			loadComponent: () => import('./clients/client-list.component').then((m) => m.ClientListComponent),
+		},
 	{
 		path: 'login',
 		loadComponent: () => import('./auth').then((m) => m.LoginComponent),
@@ -37,6 +42,6 @@ export const routes: Routes = [
 	},
 	{
 		path: '**',
-		redirectTo: 'clients/new',
+		redirectTo: 'clients',
 	},
 ];

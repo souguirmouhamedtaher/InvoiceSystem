@@ -28,3 +28,8 @@ export type CreateClientPayload = {
   ResponsibleEmail?: string;
   ResponsiblePhone?: string;
 };
+
+export type ClientListResponse = {
+  companies: Client[];
+  totalCompanies: number;
+};

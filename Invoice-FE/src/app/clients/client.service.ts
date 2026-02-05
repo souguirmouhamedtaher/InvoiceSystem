@@ -1,9 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../core/api-response';
 import { environment } from '../../environments/environment';
-import { Client, CreateClientPayload } from './client.model';
+import { Client, ClientListResponse, CreateClientPayload } from './client.model';
 
 @Injectable({ providedIn: 'root' })
 export class ClientService {
@@ -18,6 +18,29 @@ export class ClientService {
   getClientById(id: string): Observable<Client> {
     return this.http
       .get<ApiResponse<Client>>(`${environment.apiBaseUrl}/company/${id}`)
+      .pipe(map((response) => response.data));
+  }
+
+  getClients(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    companyType?: string;
+    city?: string;
+    country?: string;
+  }): Observable<ClientListResponse> {
+    const query = new HttpParams({
+      fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
+        if (value === undefined || value === null || value === '') {
+          return acc;
+        }
+        acc[key] = String(value);
+        return acc;
+      }, {}),
+    });
+
+    return this.http
+      .get<ApiResponse<ClientListResponse>>(`${environment.apiBaseUrl}/company`, { params: query })
       .pipe(map((response) => response.data));
   }
 }
