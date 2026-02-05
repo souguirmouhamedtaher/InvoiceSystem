@@ -1,27 +1,46 @@
 <div class="app-shell">
-  <header class="topbar" *ngIf="auth.isLoggedIn()">
+  <aside class="sidebar" *ngIf="auth.isLoggedIn() && !isAuthRoute()">
     <div class="brand">
       <span class="brand-mark">Invoice</span>
       <span class="brand-sub">Studio</span>
     </div>
 
-    <nav class="nav">
-      <a routerLink="/clients" routerLinkActive="active">Clients</a>
-      <a routerLink="/clients/new" routerLinkActive="active">Nouveau client</a>
-      <a routerLink="/suppliers" routerLinkActive="active">Fournisseurs</a>
-      <a routerLink="/suppliers/new" routerLinkActive="active">Nouveau fournisseur</a>
-      <a routerLink="/my-companies" routerLinkActive="active">Mes societes</a>
-      <a routerLink="/tax-settings/new" routerLinkActive="active">Taxe</a>
-      <a routerLink="/tva-monthly" routerLinkActive="active">TVA mensuelle</a>
-      <a routerLink="/invoices" routerLinkActive="active">Factures</a>
-      <a routerLink="/invoices/new" routerLinkActive="active">Nouvelle facture</a>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <p class="nav-title">Ventes</p>
+        <a class="nav-link" routerLink="/clients" routerLinkActive="active">Clients</a>
+        <a class="nav-link" routerLink="/clients/new" routerLinkActive="active">Nouveau client</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-title">Achats</p>
+        <a class="nav-link" routerLink="/suppliers" routerLinkActive="active">Fournisseurs</a>
+        <a class="nav-link" routerLink="/suppliers/new" routerLinkActive="active">Nouveau fournisseur</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-title">Facturation</p>
+        <a class="nav-link" routerLink="/invoices" routerLinkActive="active">Factures</a>
+        <a class="nav-link" routerLink="/invoices/new" routerLinkActive="active">Nouvelle facture</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-title">Societe</p>
+        <a class="nav-link" routerLink="/my-companies" routerLinkActive="active">Mes societes</a>
+        <a class="nav-link" routerLink="/tax-settings/new" routerLinkActive="active">Taxe</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-title">TVA</p>
+        <a class="nav-link" routerLink="/tva-monthly" routerLinkActive="active">TVA mensuelle</a>
+      </div>
     </nav>
 
     <div class="auth">
       <span class="status">Connecte</span>
       <button class="ghost" type="button" (click)="logout()">Se deconnecter</button>
     </div>
-  </header>
+  </aside>
 
   <main class="app-main">
     <router-outlet></router-outlet>
