@@ -13,6 +13,7 @@ import { Client } from './client.model';
 })
 export class ClientDetailComponent {
   protected readonly client = signal<Client | null>(null);
+  protected readonly clientId = signal<string>('');
   protected readonly errorMessage = signal<string | null>(null);
 
   constructor(
@@ -21,6 +22,7 @@ export class ClientDetailComponent {
   ) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
+      this.clientId.set(id);
       this.clientService.getClientById(id).subscribe({
         next: (data) => this.client.set(data),
         error: (err) => {

@@ -41,6 +41,12 @@ export const routes: Routes = [
 			import('./clients/client-detail.component').then((m) => m.ClientDetailComponent),
 	},
 	{
+		path: 'clients/:id/edit',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./clients/client-edit.component').then((m) => m.ClientEditComponent),
+	},
+	{
 		path: '**',
 		redirectTo: 'clients',
 	},

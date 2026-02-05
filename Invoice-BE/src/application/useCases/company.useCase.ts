@@ -83,6 +83,31 @@ export class CompanyUseCases {
     if (!existingCompany) throw new NotFoundException('Company not found.');
 
     const company = this.companyFactory.updateCompany(companyToUpdate);
+
+    if (company.companyname) {
+      const nameRegex = new RegExp(`^${this.escapeRegExp(company.companyname)}$`, 'i');
+      const companyExists = await this.dataService.company.findByAttribute('companyname', nameRegex);
+      if (
+        companyExists &&
+        !companyExists.deletedAt &&
+        String(companyExists._id) !== String(existingCompany._id)
+      ) {
+        throw new ConflictException('Company with this name already exists.');
+      }
+    }
+
+    if (company.email) {
+      const emailRegex = new RegExp(`^${this.escapeRegExp(company.email)}$`, 'i');
+      const emailExists = await this.dataService.company.findByAttribute('email', emailRegex);
+      if (
+        emailExists &&
+        !emailExists.deletedAt &&
+        String(emailExists._id) !== String(existingCompany._id)
+      ) {
+        throw new ConflictException('Company with this email already exists.');
+      }
+    }
+
     return await this.dataService.company.update(id, company);
   }
 

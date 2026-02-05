@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../core/api-response';
 import { environment } from '../../environments/environment';
-import { Client, ClientListResponse, CreateClientPayload } from './client.model';
+import { Client, ClientListResponse, CreateClientPayload, UpdateClientPayload } from './client.model';
 
 @Injectable({ providedIn: 'root' })
 export class ClientService {
@@ -41,6 +41,12 @@ export class ClientService {
 
     return this.http
       .get<ApiResponse<ClientListResponse>>(`${environment.apiBaseUrl}/company`, { params: query })
+      .pipe(map((response) => response.data));
+  }
+
+  updateClient(id: string, payload: UpdateClientPayload): Observable<Client> {
+    return this.http
+      .patch<ApiResponse<Client>>(`${environment.apiBaseUrl}/company/${id}`, payload)
       .pipe(map((response) => response.data));
   }
 }

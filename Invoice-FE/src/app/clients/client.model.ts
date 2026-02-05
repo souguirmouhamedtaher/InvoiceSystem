@@ -33,3 +33,5 @@ export type ClientListResponse = {
   companies: Client[];
   totalCompanies: number;
 };
+
+export type UpdateClientPayload = Partial<CreateClientPayload>;
