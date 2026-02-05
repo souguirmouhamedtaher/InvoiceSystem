@@ -170,6 +170,9 @@ export class InvoiceFactory {
     if (createInvoiceDto.AdditionalTaxSettings && createInvoiceDto.AdditionalTaxSettings.length > 0) {
       newInvoice.AdditionalTaxSettings = createInvoiceDto.AdditionalTaxSettings.map(id => new Types.ObjectId(id)) as any;
     }
+    if (!newInvoice.AdditionalTaxSettings) {
+      newInvoice.AdditionalTaxSettings = [] as any;
+    }
 
     if (createInvoiceDto.notes) newInvoice.notes = createInvoiceDto.notes;
 
@@ -235,6 +238,9 @@ export class InvoiceFactory {
 
     if (updateInvoiceDto.AdditionalTaxSettings && updateInvoiceDto.AdditionalTaxSettings.length > 0) {
       updatedInvoice.AdditionalTaxSettings = updateInvoiceDto.AdditionalTaxSettings.map(id => new Types.ObjectId(id)) as any;
+    }
+    if (!updatedInvoice.AdditionalTaxSettings) {
+      updatedInvoice.AdditionalTaxSettings = [] as any;
     }
 
     if (updateInvoiceDto.notes) updatedInvoice.notes = updateInvoiceDto.notes;

@@ -1,0 +1,55 @@
+<section class="client-list">
+  <header class="page-header">
+    <div>
+      <p class="kicker">Mes societes</p>
+      <h1>Societes proprietaires</h1>
+      <p class="subtitle">Gerez les societes qui emettent vos factures.</p>
+    </div>
+    <a class="primary" routerLink="/my-companies/new">Ajouter une societe</a>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Recherche</span>
+      <input type="text" formControlName="search" placeholder="Nom, email, ville" />
+    </label>
+
+    <label class="field">
+      <span>Ville</span>
+      <input type="text" formControlName="city" placeholder="Tunis" />
+    </label>
+
+    <label class="field">
+      <span>Pays</span>
+      <input type="text" formControlName="country" placeholder="Tunisie" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <div class="cards" *ngIf="!loading() && !errorMessage()">
+    <article class="card" *ngFor="let company of companies()">
+      <div class="card-header">
+        <div>
+          <h3>{{ company.companyname }}</h3>
+          <p>{{ company.email }}</p>
+        </div>
+        <span class="pill">Proprietaire</span>
+      </div>
+      <div class="card-body">
+        <p>{{ company.address }}</p>
+        <p *ngIf="company.city || company.country">{{ company.city }} {{ company.country }}</p>
+      </div>
+      <a class="link" [routerLink]="['/clients', company._id]">Voir fiche</a>
+    </article>
+  </div>
+
+  <footer class="pager" *ngIf="!loading() && !errorMessage()">
+    <button class="ghost" type="button" (click)="previousPage()" [disabled]="page() === 1">Precedent</button>
+    <span>Page {{ page() }} / {{ totalPages }}</span>
+    <button class="ghost" type="button" (click)="nextPage()" [disabled]="page() === totalPages">Suivant</button>
+  </footer>
+</section>

@@ -1,0 +1,62 @@
+.invoice-detail {
+  padding: 2.5rem 1.5rem 4rem;
+  display: grid;
+  gap: 2rem;
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 2.4rem;
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  color: var(--muted);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  font-weight: 600;
+}
+
+.lines {
+  display: grid;
+  gap: 1rem;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.line h3 {
+  margin: 0 0 0.2rem;
+}
+
+.ghost {
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  border-radius: 999px;
+  padding: 0.85rem 1.5rem;
+  background: transparent;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-decoration: none;
+  width: max-content;
+}

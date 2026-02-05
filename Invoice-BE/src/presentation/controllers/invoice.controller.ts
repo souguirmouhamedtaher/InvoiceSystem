@@ -17,10 +17,12 @@ import { AccessTokenGuard } from '../guards/accessToken.guard';
 
 @ApiTags('Facturation|Invoice')
 @Controller('invoice')
+@UseGuards(AccessTokenGuard)
 export class InvoiceController {
     constructor(private invoiceUseCases: InvoiceUseCases) { }
 
     @Post('calculate')
+    @ApiBearerAuth()
     @ApiOperation({
         summary: 'Calculate invoice totals without creating',
         description: 'Calculates totals, taxes, and final amounts based on provided libelles and settings. Does not save to database.'
@@ -30,6 +32,7 @@ export class InvoiceController {
     }
 
     @Post()
+    @ApiBearerAuth()
     @ApiOperation({
         summary: 'Create a new invoice with automatic calculations',
         description: 'Automatically generates invoice number (YYYY-NNNN format), calculates totals from libelles. Libelle IDs must be provided.'
@@ -39,6 +42,7 @@ export class InvoiceController {
     }
 
     @Get()
+    @ApiBearerAuth()
     @ApiQuery({ name: 'page', required: false, type: Number })
     @ApiQuery({ name: 'limit', required: false, type: Number })
     @ApiQuery({ name: 'search', required: false, type: String, description: 'Search in username, invoice number, application name' })
@@ -57,6 +61,7 @@ export class InvoiceController {
     }
 
     @Get('stats')
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get invoice statistics (total count, total amount, count by status)' })
     async getInvoiceStats(): Promise<{
         totalInvoices: number;
@@ -67,6 +72,7 @@ export class InvoiceController {
     }
 
     @Get('date-range')
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get invoices by date range' })
     @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (YYYY-MM-DD)' })
     @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (YYYY-MM-DD)' })
@@ -84,6 +90,7 @@ export class InvoiceController {
     }
 
     @Patch(':id')
+    @ApiBearerAuth()
     @ApiOperation({
         summary: 'Update an invoice with automatic total recalculation',
         description: 'If libelles are updated, totals will be automatically recalculated.'
@@ -96,6 +103,7 @@ export class InvoiceController {
     }
 
     @Delete(':id')
+    @ApiBearerAuth()
     async deleteInvoice(@Param('id') id: string): Promise<{ success: boolean }> {
         const result = await this.invoiceUseCases.deleteInvoice(id);
         return { success: result };

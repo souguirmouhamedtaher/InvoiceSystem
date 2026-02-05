@@ -1,11 +1,11 @@
 <section class="client-create">
   <header class="page-header">
     <div>
-      <p class="kicker">US-VENTE-01</p>
-      <h1>Creer un client</h1>
-      <p class="subtitle">Ajoutez vos clients pour preparer vos ventes et factures.</p>
+      <p class="kicker">Ma societe</p>
+      <h1>Ajouter une societe</h1>
+      <p class="subtitle">Enregistrez votre societe pour l'utiliser sur les factures.</p>
     </div>
-    <div class="badge">Client</div>
+    <div class="badge">Proprietaire</div>
   </header>
 
   <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
@@ -20,7 +20,7 @@
 
       <label class="field">
         <span>Email</span>
-        <input type="email" formControlName="email" placeholder="client@mail.com" />
+        <input type="email" formControlName="email" placeholder="contact@entreprise.com" />
         <small *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
           Entrez un email valide.
         </small>

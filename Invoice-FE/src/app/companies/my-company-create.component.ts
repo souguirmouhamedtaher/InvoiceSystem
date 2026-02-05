@@ -2,17 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ClientService } from './client.service';
-import { CreateClientPayload } from './client.model';
+import { ClientService } from '../clients/client.service';
+import { CreateClientPayload } from '../clients/client.model';
 
 @Component({
-  selector: 'app-client-create',
+  selector: 'app-my-company-create',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './client-create.component.html',
-  styleUrl: './client-create.component.scss',
+  templateUrl: './my-company-create.component.html',
+  styleUrl: './my-company-create.component.scss',
 })
-export class ClientCreateComponent {
+export class MyCompanyCreateComponent {
   protected readonly saving = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -49,7 +49,7 @@ export class ClientCreateComponent {
 
     const payload: CreateClientPayload = {
       companyname: (this.form.value.companyname || '').trim(),
-      companyType: 'client',
+      companyType: 'mycompany',
       email: (this.form.value.email || '').trim(),
       address: (this.form.value.address || '').trim(),
       phones,
@@ -90,7 +90,7 @@ export class ClientCreateComponent {
     }
 
     if (message.includes('name already exists')) {
-      return 'Ce client existe deja.';
+      return 'Cette societe existe deja.';
     }
 
     if (message.includes('email already exists')) {

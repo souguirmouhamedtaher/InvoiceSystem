@@ -47,6 +47,38 @@ export const routes: Routes = [
 			import('./clients/client-edit.component').then((m) => m.ClientEditComponent),
 	},
 	{
+		path: 'my-companies',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./companies/my-company-list.component').then((m) => m.MyCompanyListComponent),
+	},
+	{
+		path: 'my-companies/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./companies/my-company-create.component').then((m) => m.MyCompanyCreateComponent),
+	},
+	{
+		path: 'tax-settings/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./tax-settings/tax-settings-create.component').then(
+				(m) => m.TaxSettingsCreateComponent
+			),
+	},
+	{
+		path: 'invoices/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./invoices/invoice-create.component').then((m) => m.InvoiceCreateComponent),
+	},
+	{
+		path: 'invoices/:id',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./invoices/invoice-detail.component').then((m) => m.InvoiceDetailComponent),
+	},
+	{
 		path: '**',
 		redirectTo: 'clients',
 	},

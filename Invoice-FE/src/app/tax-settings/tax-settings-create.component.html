@@ -1,0 +1,57 @@
+<section class="tax-create">
+  <header class="page-header">
+    <div>
+      <p class="kicker">Taxe</p>
+      <h1>Creer un tax setting</h1>
+      <p class="subtitle">Definissez la TVA ou retenue utilisee sur les factures.</p>
+    </div>
+    <a class="ghost" routerLink="/invoices/new">Retour facture</a>
+  </header>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <label class="field">
+        <span>Nom</span>
+        <input type="text" formControlName="name" placeholder="TVA 19%" />
+        <small *ngIf="form.get('name')?.touched && form.get('name')?.invalid">
+          Ce champ est obligatoire.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Type</span>
+        <select formControlName="taxType">
+          <option value="TVA">TVA</option>
+          <option value="RE">Retenue (RE)</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Valeur (%)</span>
+        <input type="number" min="0" step="0.01" formControlName="taxprice" />
+        <small *ngIf="form.get('taxprice')?.touched && form.get('taxprice')?.invalid">
+          Entrez un taux valide.
+        </small>
+      </label>
+
+      <label class="field switch">
+        <span>Actif</span>
+        <input type="checkbox" formControlName="isactive" />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Notes</span>
+      <textarea rows="3" formControlName="notes" placeholder="Notes"></textarea>
+    </label>
+
+    <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+    <div class="actions">
+      <button class="ghost" type="button" [disabled]="saving()" (click)="form.reset()">Effacer</button>
+      <button class="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Creation...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</section>

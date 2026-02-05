@@ -38,6 +38,26 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'my-companies',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'my-companies/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'tax-settings/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'invoices/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'invoices/:id',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Server,
   }

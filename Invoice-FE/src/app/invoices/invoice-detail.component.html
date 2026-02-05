@@ -1,0 +1,47 @@
+<section class="invoice-detail" *ngIf="invoice(); else loading">
+  <header>
+    <p class="kicker">Facture</p>
+    <h1>{{ invoice()?.invoiceNumber }}</h1>
+    <p class="subtitle">{{ invoice()?.clientId?.companyname }}</p>
+  </header>
+
+  <div class="summary">
+    <div>
+      <strong>Total HT</strong>
+      <span>{{ invoice()?.totalHT }}</span>
+    </div>
+    <div>
+      <strong>TVA</strong>
+      <span>{{ invoice()?.totalTax }}</span>
+    </div>
+    <div>
+      <strong>Total TTC</strong>
+      <span>{{ invoice()?.totalTTC }}</span>
+    </div>
+  </div>
+
+  <div class="lines" *ngIf="invoice()?.Libelle?.length">
+    <h2>Lignes</h2>
+    <div class="line" *ngFor="let line of invoice()?.Libelle">
+      <div>
+        <h3>{{ line.name }}</h3>
+        <p>Qte: {{ line.qte }}</p>
+      </div>
+      <div>
+        <span>HT: {{ line.finalprixHT }}</span>
+        <span>TTC: {{ line.finalprixTTC }}</span>
+      </div>
+    </div>
+  </div>
+
+  <a class="ghost" routerLink="/invoices/new">Nouvelle facture</a>
+</section>
+
+<ng-template #loading>
+  <section class="invoice-detail">
+    <div class="card" *ngIf="errorMessage(); else spinner">{{ errorMessage() }}</div>
+    <ng-template #spinner>
+      <div class="card">Chargement...</div>
+    </ng-template>
+  </section>
+</ng-template>
