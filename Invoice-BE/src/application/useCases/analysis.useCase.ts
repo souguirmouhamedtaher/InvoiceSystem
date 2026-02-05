@@ -144,6 +144,54 @@ export class AnalysisUseCases {
         };
     }
 
+    async getVatCumulative(year?: number, month?: number) {
+        const fullAnalysis = await this.getTreasuryAnalysis();
+        const monthly = fullAnalysis.monthlyBreakdown;
+
+        let runningBalance = 0;
+        const cumulativeByMonth = monthly.map((entry) => {
+            runningBalance += entry.summary.diffTVA;
+            return {
+                month: entry.month,
+                diffTVA: entry.summary.diffTVA,
+                vatToPay: entry.summary.vatToPay,
+                carryForwardNextMonth: entry.summary.carryForwardNextMonth || 0,
+                cumulativeBalance: runningBalance,
+            };
+        });
+
+        let filteredResults = cumulativeByMonth;
+        if (year) {
+            const yearStr = year.toString();
+            if (month) {
+                const monthStr = month.toString().padStart(2, '0');
+                const targetKey = `${yearStr}-${monthStr}`;
+                filteredResults = cumulativeByMonth.filter(r => r.month === targetKey);
+            } else {
+                filteredResults = cumulativeByMonth.filter(r => r.month.startsWith(yearStr));
+            }
+        }
+
+        const totals = {
+            diffTVA: 0,
+            cumulativeBalance: 0,
+        };
+
+        filteredResults.forEach((entry) => {
+            totals.diffTVA += entry.diffTVA;
+        });
+
+        if (filteredResults.length > 0) {
+            totals.cumulativeBalance = filteredResults[filteredResults.length - 1].cumulativeBalance;
+        }
+
+        return {
+            period: year ? (month ? `${month}/${year}` : `${year}`) : 'All Time',
+            totals,
+            monthlyBreakdown: filteredResults,
+        };
+    }
+
     private getDefaultMonthlyData() {
         return {
             sales: {

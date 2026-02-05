@@ -74,6 +74,12 @@ export const routes: Routes = [
 			import('./tva/tva-monthly.component').then((m) => m.TvaMonthlyComponent),
 	},
 	{
+		path: 'tva-cumulative',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./tva/tva-cumulative.component').then((m) => m.TvaCumulativeComponent),
+	},
+	{
 		path: 'suppliers',
 		canActivate: [authGuard],
 		loadComponent: () => import('./suppliers').then((m) => m.SupplierListComponent),

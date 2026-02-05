@@ -1,0 +1,59 @@
+<section class="tva-cumulative">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-TVA-02</p>
+      <h1>TVA cumulee</h1>
+      <p class="subtitle">Suivez le solde TVA cumule mois apres mois.</p>
+    </div>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Annee</span>
+      <input type="number" min="2000" formControlName="year" placeholder="2026" />
+    </label>
+
+    <label class="field">
+      <span>Mois</span>
+      <input type="number" min="1" max="12" formControlName="month" placeholder="2" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <ng-container *ngIf="!loading() && !errorMessage() && data() as vat">
+    <section class="summary">
+      <div>
+        <strong>Solde cumule</strong>
+        <span>{{ vat.totals.cumulativeBalance | number: '1.2-2' }}</span>
+      </div>
+      <div>
+        <strong>Diff TVA periode</strong>
+        <span>{{ vat.totals.diffTVA | number: '1.2-2' }}</span>
+      </div>
+    </section>
+
+    <section class="breakdown">
+      <h2>Historique</h2>
+      <div class="table">
+        <div class="row header">
+          <span>Mois</span>
+          <span>Diff TVA</span>
+          <span>Solde cumule</span>
+          <span>TVA a payer</span>
+          <span>Report</span>
+        </div>
+        <div class="row" *ngFor="let month of vat.monthlyBreakdown">
+          <span>{{ month.month }}</span>
+          <span>{{ month.diffTVA | number: '1.2-2' }}</span>
+          <span>{{ month.cumulativeBalance | number: '1.2-2' }}</span>
+          <span>{{ month.vatToPay | number: '1.2-2' }}</span>
+          <span>{{ month.carryForwardNextMonth | number: '1.2-2' }}</span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</section>

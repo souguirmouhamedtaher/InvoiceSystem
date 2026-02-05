@@ -30,3 +30,20 @@ export type VatTotalsResponse = {
   };
   monthlyBreakdown: VatMonthlyBreakdown[];
 };
+
+export type VatCumulativeEntry = {
+  month: string;
+  diffTVA: number;
+  vatToPay: number;
+  carryForwardNextMonth: number;
+  cumulativeBalance: number;
+};
+
+export type VatCumulativeResponse = {
+  period: string;
+  totals: {
+    diffTVA: number;
+    cumulativeBalance: number;
+  };
+  monthlyBreakdown: VatCumulativeEntry[];
+};

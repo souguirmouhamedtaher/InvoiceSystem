@@ -54,6 +54,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'tva-cumulative',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'suppliers',
     renderMode: RenderMode.Server,
   },

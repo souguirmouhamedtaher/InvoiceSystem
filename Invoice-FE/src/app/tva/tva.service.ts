@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../core/api-response';
 import { environment } from '../../environments/environment';
-import { VatTotalsResponse } from './tva.model';
+import { VatCumulativeResponse, VatTotalsResponse } from './tva.model';
 
 @Injectable({ providedIn: 'root' })
 export class TvaService {
@@ -21,6 +21,22 @@ export class TvaService {
       .get<ApiResponse<VatTotalsResponse>>(`${environment.apiBaseUrl}/analysis/treasury`, {
         params,
       })
+      .pipe(map((response) => response.data));
+  }
+
+  getVatCumulative(year?: number, month?: number): Observable<VatCumulativeResponse> {
+    const params = new HttpParams({
+      fromObject: {
+        ...(year ? { year: String(year) } : {}),
+        ...(month ? { month: String(month) } : {}),
+      },
+    });
+
+    return this.http
+      .get<ApiResponse<VatCumulativeResponse>>(
+        `${environment.apiBaseUrl}/analysis/vat-cumulative`,
+        { params }
+      )
       .pipe(map((response) => response.data));
   }
 }
