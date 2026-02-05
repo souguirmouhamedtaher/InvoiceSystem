@@ -70,6 +70,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'invoices/buying',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'invoices/new',
     renderMode: RenderMode.Server,
   },

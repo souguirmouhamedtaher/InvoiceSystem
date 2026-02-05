@@ -96,6 +96,13 @@ export const routes: Routes = [
 			import('./invoices/invoice-list.component').then((m) => m.InvoiceListComponent),
 	},
 	{
+		path: 'invoices/buying',
+		canActivate: [authGuard],
+		data: { invoiceType: 'buying' },
+		loadComponent: () =>
+			import('./invoices/invoice-list.component').then((m) => m.InvoiceListComponent),
+	},
+	{
 		path: 'invoices/new',
 		canActivate: [authGuard],
 		loadComponent: () =>

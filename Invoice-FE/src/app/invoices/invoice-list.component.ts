@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Invoice, InvoiceListResponse } from './invoice.model';
@@ -21,9 +21,11 @@ export class InvoiceListComponent {
   protected readonly limit = 10;
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly currentInvoiceType = signal<'all' | 'selling' | 'buying'>('all');
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private route = inject(ActivatedRoute);
 
   protected readonly form = this.fb.group({
     search: [''],
@@ -35,7 +37,10 @@ export class InvoiceListComponent {
   });
 
   constructor(private invoiceService: InvoiceService) {
-    this.loadInvoices(1);
+    this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
+      const type = data['invoiceType'] as 'selling' | 'buying' | undefined;
+      this.applyInvoiceTypeFilter(type);
+    });
 
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
@@ -67,6 +72,14 @@ export class InvoiceListComponent {
       dateFrom: '',
       dateTo: '',
     });
+    this.currentInvoiceType.set('all');
+  }
+
+  private applyInvoiceTypeFilter(type?: 'selling' | 'buying'): void {
+    const normalized = type ?? 'all';
+    this.currentInvoiceType.set(normalized);
+    this.form.patchValue({ invoiceType: normalized }, { emitEvent: false });
+    this.loadInvoices(1);
   }
 
   private loadInvoices(page: number): void {

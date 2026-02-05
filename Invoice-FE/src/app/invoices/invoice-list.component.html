@@ -2,7 +2,13 @@
   <header class="page-header">
     <div>
       <p class="kicker">US-VENTE-05</p>
-      <h1>Factures</h1>
+      <h1>
+        {{ currentInvoiceType() === 'buying'
+          ? "Factures d'achat"
+          : currentInvoiceType() === 'selling'
+            ? 'Factures de vente'
+            : 'Factures' }}
+      </h1>
       <p class="subtitle">Visualisez vos factures de vente et d'achat.</p>
     </div>
     <a class="primary" routerLink="/invoices/new">Nouvelle facture</a>
