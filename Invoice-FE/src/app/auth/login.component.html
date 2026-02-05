@@ -1,0 +1,40 @@
+<section class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-header">
+      <p class="auth-kicker">Connexion</p>
+      <h1>Acceder a votre espace</h1>
+      <p class="auth-subtitle">Utilisez vos identifiants pour gerer vos clients.</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <label class="field">
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="ex: agent@invoice.com" />
+        <small *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+          Entrez un email valide.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Mot de passe</span>
+        <input type="password" formControlName="password" placeholder="Votre mot de passe" />
+        <small *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
+          Le mot de passe est obligatoire (6 caracteres minimum).
+        </small>
+      </label>
+
+      <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+      <button class="primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Connexion...' : 'Se connecter' }}
+      </button>
+
+      <a class="link" routerLink="/forgot-password">Mot de passe oublie ?</a>
+
+      <div class="helper">
+        <span>Besoin d'un acces ?</span>
+        <a routerLink="/signup">Creer un compte</a>
+      </div>
+    </form>
+  </div>
+</section>

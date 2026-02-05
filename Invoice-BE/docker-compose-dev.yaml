@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - minio-net
+    volumes:
+      - mongo-data:/data/db
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console web
+    environment:
+      MINIO_ROOT_USER: factureadmin
+      MINIO_ROOT_PASSWORD: factureadmin
+    volumes:
+      - facture-data:/data
+    networks:
+      - minio-net
+
+  api:
+    container_name: facture-api
+    image: ${IMAGE}
+    build:
+      dockerfile: dockerfile
+      context: .
+    restart: always
+    networks:
+      - minio-net
+    ports:
+      - "3000:3000"
+    depends_on:
+      - minio
+      - mongo
+
+volumes:
+  minio-data:
+  mongo-data:
+
+networks:
+  minio-net:

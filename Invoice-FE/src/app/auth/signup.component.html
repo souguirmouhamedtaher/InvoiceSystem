@@ -1,0 +1,54 @@
+<section class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-header">
+      <p class="auth-kicker">Inscription</p>
+      <h1>Creer un compte</h1>
+      <p class="auth-subtitle">Activez votre espace pour gerer vos clients.</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <label class="field">
+        <span>Prenom</span>
+        <input type="text" formControlName="firstName" placeholder="Votre prenom" />
+        <small *ngIf="form.get('firstName')?.touched && form.get('firstName')?.invalid">
+          Ce champ est obligatoire.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Nom</span>
+        <input type="text" formControlName="lastName" placeholder="Votre nom" />
+        <small *ngIf="form.get('lastName')?.touched && form.get('lastName')?.invalid">
+          Ce champ est obligatoire.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="ex: agent@invoice.com" />
+        <small *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+          Entrez un email valide.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Mot de passe</span>
+        <input type="password" formControlName="password" placeholder="Votre mot de passe" />
+        <small *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
+          Le mot de passe est obligatoire (6 caracteres minimum).
+        </small>
+      </label>
+
+      <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+      <button class="primary" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Creation...' : 'Creer le compte' }}
+      </button>
+
+      <div class="helper">
+        <span>Deja inscrit ?</span>
+        <a routerLink="/login">Se connecter</a>
+      </div>
+    </form>
+  </div>
+</section>

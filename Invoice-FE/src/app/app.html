@@ -1,0 +1,21 @@
+<div class="app-shell">
+  <header class="topbar" *ngIf="auth.isLoggedIn()">
+    <div class="brand">
+      <span class="brand-mark">Invoice</span>
+      <span class="brand-sub">Studio</span>
+    </div>
+
+    <nav class="nav">
+      <a routerLink="/clients/new" routerLinkActive="active">Nouveau client</a>
+    </nav>
+
+    <div class="auth">
+      <span class="status">Connecte</span>
+      <button class="ghost" type="button" (click)="logout()">Se deconnecter</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+</div>

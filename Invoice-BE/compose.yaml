@@ -1,0 +1,17 @@
+services:
+  api:
+    image: louayelaroui/invoice-be:prod
+    container_name: invoice-be-prod
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./.env:/app/.env:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://invoice.celestialwavedigital.com/api/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

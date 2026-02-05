@@ -1,0 +1,65 @@
+import { Module } from '@nestjs/common';
+import { InfrastructureLayerModule } from '../infrastructure/infrastructureLayer.module';
+import {
+    FilesFactory,
+    UserFactory,
+    CompanyFactory,
+    TaxSettingsFactory,
+    LibelleFactory,
+    InvoiceFactory,
+} from './factoryMapper';
+import {
+    UserUseCases,
+    SuperAdminUseCases,
+    FilesUseCases,
+    AuthUseCases,
+    CompanyUseCases,
+    TaxSettingsUseCases,
+    LibelleUseCases,
+    InvoiceUseCases,
+    PurchaseInvoiceUseCases,
+    AnalysisUseCases,
+} from './useCases';
+
+@Module({
+    imports: [
+        InfrastructureLayerModule,
+    ],
+    providers: [
+        UserFactory,
+        UserUseCases,
+        SuperAdminUseCases,
+        AuthUseCases,
+        FilesFactory,
+        FilesUseCases,
+        CompanyFactory,
+        CompanyUseCases,
+        TaxSettingsFactory,
+        TaxSettingsUseCases,
+        LibelleFactory,
+        LibelleUseCases,
+        InvoiceFactory,
+        InvoiceUseCases,
+        PurchaseInvoiceUseCases,
+        AnalysisUseCases,
+    ],
+    exports: [
+        UserFactory,
+        UserUseCases,
+        SuperAdminUseCases,
+        AuthUseCases,
+        FilesFactory,
+        FilesUseCases,
+        CompanyFactory,
+        CompanyUseCases,
+        TaxSettingsFactory,
+        TaxSettingsUseCases,
+        LibelleFactory,
+        LibelleUseCases,
+        InvoiceFactory,
+        InvoiceUseCases,
+        PurchaseInvoiceUseCases,
+        AnalysisUseCases,
+    ],
+})
+export class ApplicationLayerModule { }

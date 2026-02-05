@@ -1,0 +1,37 @@
+<section class="client-detail" *ngIf="client(); else loading">
+  <header>
+    <p class="kicker">Fiche client</p>
+    <h1>{{ client()?.companyname }}</h1>
+    <p class="subtitle">Client cree avec succes.</p>
+  </header>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Contact principal</h3>
+      <p>{{ client()?.email }}</p>
+      <p *ngFor="let phone of client()?.phones">{{ phone }}</p>
+    </article>
+
+    <article class="card">
+      <h3>Adresse</h3>
+      <p>{{ client()?.address }}</p>
+      <p>{{ client()?.city }} {{ client()?.country }}</p>
+    </article>
+
+    <article class="card" *ngIf="client()?.notes">
+      <h3>Notes</h3>
+      <p>{{ client()?.notes }}</p>
+    </article>
+  </div>
+
+  <a routerLink="/clients/new" class="primary">Ajouter un autre client</a>
+</section>
+
+<ng-template #loading>
+  <section class="client-detail">
+    <div class="card" *ngIf="errorMessage(); else spinner">{{ errorMessage() }}</div>
+    <ng-template #spinner>
+      <div class="card">Chargement...</div>
+    </ng-template>
+  </section>
+</ng-template>

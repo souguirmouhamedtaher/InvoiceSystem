@@ -1,0 +1,34 @@
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# Enable Corepack
+RUN corepack enable
+
+# Pin the pnpm version to match the version you use in DEV (pnpm@9.15.0)
+RUN corepack prepare pnpm@9.15.0 --activate
+
+# Set up the pnpm store directory (if needed)
+RUN pnpm config set store-dir /pnpm/store
+
+COPY . /app
+WORKDIR /app
+
+FROM base AS prod-deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
+
+FROM base AS build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm run build
+
+FROM gcr.io/distroless/nodejs20-debian12 AS production
+
+WORKDIR /app
+
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=build /app/dist/ ./dist
+COPY --from=build /app/public/ ./public
+
+EXPOSE 3000
+
+CMD [ "./dist/main.js" ]
