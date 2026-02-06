@@ -22,6 +22,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'dashboard',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'clients/new',
     renderMode: RenderMode.Prerender,
   },
@@ -54,6 +58,18 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'tva-payments',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'tva-payments/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'tva-payments/:id',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'tva-cumulative',
     renderMode: RenderMode.Server,
   },
@@ -75,7 +91,7 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'employees/new',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Prerender,
   },
   {
     path: 'employees/:id',
@@ -83,11 +99,11 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'salaries',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Prerender,
   },
   {
     path: 'salaries/new',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Prerender,
   },
   {
     path: 'salaries/:id',
@@ -95,11 +111,11 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'cnss',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Prerender,
   },
   {
     path: 'cnss/new',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Prerender,
   },
   {
     path: 'cnss/:id',

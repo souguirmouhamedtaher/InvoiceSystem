@@ -10,6 +10,7 @@ export * from "./purchaseInvoice.entity"
 export * from "./employee.entity"
 export * from "./salary.entity"
 export * from "./cnssPayment.entity"
+export * from "./tvaPayment.entity"
 
 
 

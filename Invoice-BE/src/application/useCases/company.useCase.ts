@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
 import { Company } from 'src/domain/entities';
 import { CreateCompanyDto, UpdateCompanyDto } from '../dtos';
 import { CompanyFactory } from '../factoryMapper';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class CompanyUseCases {
@@ -12,11 +13,12 @@ export class CompanyUseCases {
   ) {}
 
   async getAllCompanies(
+    userId: string | Types.ObjectId,
     page: number = 1,
     limit: number = 20,
     search?: { [key: string]: any }
   ): Promise<{ companies: Company[]; totalCompanies: number }> {
-    const query: any = { deletedAt: null };
+    const query: any = { deletedAt: null, userId: new Types.ObjectId(userId) };
     const orQueries: any[] = [];
 
     if (search) {
@@ -46,14 +48,18 @@ export class CompanyUseCases {
     return { companies, totalCompanies };
   }
 
-  async getCompanyById(id: string): Promise<Company> {
+  async getCompanyById(userId: string | Types.ObjectId, id: string): Promise<Company> {
     const company = await this.dataService.company.get(id);
     if (!company) throw new NotFoundException('Company not found.');
+    if (company.userId.toString() !== userId.toString()) {
+      throw new ForbiddenException('Access denied');
+    }
     return company;
   }
 
-  async createCompany(companyToCreate: CreateCompanyDto): Promise<Company> {
+  async createCompany(userId: string | Types.ObjectId, companyToCreate: CreateCompanyDto): Promise<Company> {
     const company = this.companyFactory.createCompany(companyToCreate);
+    company.userId = new Types.ObjectId(userId);
 
     // Check if company with same name or email already exists (case-insensitive)
     const nameRegex = new RegExp(`^${this.escapeRegExp(company.companyname)}$`, 'i');
@@ -78,9 +84,12 @@ export class CompanyUseCases {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  async updateCompany(id: string, companyToUpdate: UpdateCompanyDto): Promise<Company> {
+  async updateCompany(userId: string | Types.ObjectId, id: string, companyToUpdate: UpdateCompanyDto): Promise<Company> {
     const existingCompany = await this.dataService.company.get(id);
     if (!existingCompany) throw new NotFoundException('Company not found.');
+    if (existingCompany.userId.toString() !== userId.toString()) {
+      throw new ForbiddenException('Access denied');
+    }
 
     const company = this.companyFactory.updateCompany(companyToUpdate);
 
@@ -111,8 +120,12 @@ export class CompanyUseCases {
     return await this.dataService.company.update(id, company);
   }
 
-  async deleteCompany(id: string): Promise<boolean> {
+  async deleteCompany(userId: string | Types.ObjectId, id: string): Promise<boolean> {
     const company = await this.dataService.company.get(id);
+    if (!company) throw new NotFoundException('Company not found.');
+    if (company.userId.toString() !== userId.toString()) {
+      throw new ForbiddenException('Access denied');
+    }
     if (!company) throw new NotFoundException('Company not found.');
 
     return await this.dataService.company.delete(id);

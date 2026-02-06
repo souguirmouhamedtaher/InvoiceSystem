@@ -8,4 +8,5 @@ export * from "./purchaseInvoice.model"
 export * from "./employee.model"
 export * from "./salary.model"
 export * from "./cnssPayment.model"
+export * from "./tvaPayment.model"
 

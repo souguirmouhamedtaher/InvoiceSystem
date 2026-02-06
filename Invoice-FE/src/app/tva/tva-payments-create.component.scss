@@ -1,4 +1,4 @@
-.employee-create {
+.tva-payments-create {
   padding: 2.5rem 1.5rem 4rem;
   display: grid;
   gap: 2rem;
@@ -30,8 +30,8 @@
 }
 
 .badge {
-  background: rgba(59, 130, 246, 0.15);
-  color: #1d4ed8;
+  background: rgba(14, 116, 144, 0.2);
+  color: #0f766e;
   padding: 0.4rem 1rem;
   border-radius: 999px;
   font-weight: 600;
@@ -60,8 +60,7 @@
 }
 
 .field input,
-.field textarea,
-.field select {
+.field textarea {
   border: 1px solid rgba(15, 23, 42, 0.14);
   border-radius: 12px;
   padding: 0.85rem 1rem;
@@ -80,7 +79,7 @@
   border-radius: 999px;
   padding: 0.85rem 1.8rem;
   font-weight: 600;
-  background: linear-gradient(130deg, #60a5fa, #38bdf8);
+  background: linear-gradient(130deg, #06b6d4, #38bdf8);
   color: #052e2b;
   cursor: pointer;
 }

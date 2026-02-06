@@ -30,6 +30,7 @@ export * from './APPlogic/purchaseInvoice/updatePurchaseInvoice.dto'
 
 // employee dtos
 export * from './APPlogic/employee/createEmployee.dto'
+export * from './APPlogic/employee/generatePayroll.dto'
 export * from './APPlogic/employee/updateEmployee.dto'
 
 // salary dtos
@@ -39,6 +40,10 @@ export * from './APPlogic/salary/updateSalary.dto'
 // cnss dtos
 export * from './APPlogic/cnss/createCnssPayment.dto'
 export * from './APPlogic/cnss/updateCnssPayment.dto'
+
+// tva payment dtos
+export * from './APPlogic/tvaPayment/createTvaPayment.dto'
+export * from './APPlogic/tvaPayment/updateTvaPayment.dto'
 
 
 

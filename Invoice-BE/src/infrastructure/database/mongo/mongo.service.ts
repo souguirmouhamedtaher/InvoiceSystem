@@ -18,6 +18,7 @@ import { PurchaseInvoice, PurchaseInvoiceDocument } from './models';
 import { Employee, EmployeeDocument } from './models';
 import { Salary, SalaryDocument } from './models';
 import { CnssPayment, CnssPaymentDocument } from './models';
+import { TvaPayment, TvaPaymentDocument } from './models';
 import { MongoGenericRepository } from "./repositories/mongo.repository";
 @Injectable()
 export class MongoDataServices
@@ -32,6 +33,7 @@ export class MongoDataServices
     employee: MongoGenericRepository<Employee>;
     salary: MongoGenericRepository<Salary>;
     cnssPayment: MongoGenericRepository<CnssPayment>;
+    tvaPayment: MongoGenericRepository<TvaPayment>;
 
 
 
@@ -46,6 +48,7 @@ export class MongoDataServices
         @InjectModel(Employee.name) private EmployeeRepository: Model<EmployeeDocument>,
         @InjectModel(Salary.name) private SalaryRepository: Model<SalaryDocument>,
         @InjectModel(CnssPayment.name) private CnssPaymentRepository: Model<CnssPaymentDocument>,
+        @InjectModel(TvaPayment.name) private TvaPaymentRepository: Model<TvaPaymentDocument>,
     ) { }
 
 
@@ -61,8 +64,9 @@ export class MongoDataServices
         this.libelle = new MongoGenericRepository<Libelle>(this.LibelleRepository, ["TaxSettingsId"]);
         this.TaxSettings = new MongoGenericRepository<TaxSettings>(this.TaxSettingsRepository);
         this.purchaseInvoice = new MongoGenericRepository<PurchaseInvoice>(this.PurchaseInvoiceRepository, ["companyId"]);
-        this.employee = new MongoGenericRepository<Employee>(this.EmployeeRepository);
+        this.employee = new MongoGenericRepository<Employee>(this.EmployeeRepository, ["companyId"]);
         this.salary = new MongoGenericRepository<Salary>(this.SalaryRepository, ["employeeId"]);
         this.cnssPayment = new MongoGenericRepository<CnssPayment>(this.CnssPaymentRepository, ["employeeId"]);
+        this.tvaPayment = new MongoGenericRepository<TvaPayment>(this.TvaPaymentRepository);
     }
 }

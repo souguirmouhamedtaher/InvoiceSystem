@@ -30,6 +30,9 @@ export class InvoicePayment {
 export class Invoice {
     _id: Types.ObjectId
 
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+    userId: Types.ObjectId;
+
     @Prop()
     username: string;
 

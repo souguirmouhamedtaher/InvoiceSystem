@@ -3,15 +3,180 @@
     <div>
       <p class="kicker">US-PAIE-01</p>
       <h1>Employes</h1>
-      <p class="subtitle">Gerez vos employes et leur statut CNSS.</p>
+      <p class="subtitle">Gerez vos employes, salaires et CNSS au meme endroit.</p>
     </div>
-    <a class="primary" routerLink="/employees/new">Nouvel employe</a>
   </header>
+
+  <!-- Payroll Summary Card -->
+  <section class="summary-card" *ngIf="payrollSummary() as summary">
+    <div class="summary-header">
+      <h2>Resume de la paie - {{ summaryMonth() }}</h2>
+      <button class="ghost" type="button" (click)="refreshSummary()">Actualiser</button>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="summary-label">Total salaires</span>
+        <strong class="summary-value">{{ summary.totalSalaryAmount | number: '1.2-2' }} TND</strong>
+        <span class="summary-count">{{ summary.salaryCount }} paie(s)</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Total CNSS</span>
+        <strong class="summary-value">{{ summary.totalCnssAmount | number: '1.2-2' }} TND</strong>
+        <span class="summary-count">{{ summary.cnssCount }} paiement(s)</span>
+      </div>
+      <div class="summary-item highlight">
+        <span class="summary-label">Total general</span>
+        <strong class="summary-value total">{{ summary.totalSalaryAmount + summary.totalCnssAmount | number: '1.2-2' }} TND</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-card collapsible">
+    <div class="form-header" (click)="showEmployeeForm.set(!showEmployeeForm())">
+      <h2>{{ selectedEmployee() ? 'Modifier un employe' : 'Ajouter un employe' }}</h2>
+      <div class="actions-inline">
+        <button class="ghost" type="button" (click)="resetEmployeeForm(); $event.stopPropagation()">Nouveau</button>
+        <span class="toggle">{{ showEmployeeForm() ? '−' : '+' }}</span>
+      </div>
+    </div>
+
+    <form class="employee-form" [formGroup]="employeeForm" (ngSubmit)="submitEmployee()" *ngIf="showEmployeeForm()">
+      <div class="grid">
+        <label class="field">
+          <span>Societe</span>
+          <select formControlName="companyId">
+            <option value="">Selectionner</option>
+            <option *ngFor="let company of companies()" [value]="company._id">
+              {{ company.companyname }}
+            </option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Prenom</span>
+          <input type="text" formControlName="firstName" placeholder="Amira" />
+        </label>
+
+        <label class="field">
+          <span>Nom</span>
+          <input type="text" formControlName="lastName" placeholder="Ben Salah" />
+        </label>
+
+        <label class="field">
+          <span>Email</span>
+          <input type="email" formControlName="email" placeholder="amira@company.tn" />
+        </label>
+
+        <label class="field">
+          <span>Telephone</span>
+          <input type="text" formControlName="phone" placeholder="+21612345678" />
+        </label>
+
+        <label class="field">
+          <span>Salaire net mensuel</span>
+          <input type="number" min="0" step="0.01" formControlName="monthlyNetSalary" />
+        </label>
+
+        <label class="field">
+          <span>CNSS applicable</span>
+          <select formControlName="cnssApplicable">
+            <option [ngValue]="true">Oui</option>
+            <option [ngValue]="false">Non</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Taux CNSS (%)</span>
+          <input type="number" min="0" max="100" step="0.01" formControlName="cnssRatePercent" />
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Notes</span>
+        <textarea rows="3" formControlName="notes"></textarea>
+      </label>
+
+      <div class="error" *ngIf="formError()">{{ formError() }}</div>
+
+      <div class="actions">
+        <button class="ghost" type="button" [disabled]="saving()" (click)="resetEmployeeForm()">Effacer</button>
+        <button class="primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Enregistrement...' : selectedEmployee() ? 'Mettre a jour' : 'Enregistrer' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="form-card collapsible">
+    <div class="form-header" (click)="showPayrollForm.set(!showPayrollForm())">
+      <h2>Generation mensuelle</h2>
+      <span class="toggle">{{ showPayrollForm() ? '−' : '+' }}</span>
+    </div>
+    <div *ngIf="showPayrollForm()">
+      <p class="subtitle">Calcule les salaires et la CNSS pour tous les employes.</p>
+      <form class="employee-form" [formGroup]="payrollForm" (ngSubmit)="generateMonthlyPayroll()">
+      <div class="grid">
+        <label class="field">
+          <span>Mois</span>
+          <input type="month" formControlName="month" />
+        </label>
+        <label class="field">
+          <span>Societe</span>
+          <select formControlName="companyId">
+            <option value="">Toutes</option>
+            <option *ngFor="let company of companies()" [value]="company._id">
+              {{ company.companyname }}
+            </option>
+          </select>
+        </label>
+      </div>
+      <div class="actions">
+        <button class="primary" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Generation...' : 'Generer la paie' }}
+        </button>
+      </div>
+      <div class="result" *ngIf="payrollResult() as result">
+        <p class="result-title">Resume de la paie</p>
+        <div class="result-grid">
+          <div>
+            <span class="result-label">Date de paie</span>
+            <strong>{{ formatDate(result.payrollDate) }}</strong>
+          </div>
+          <div>
+            <span class="result-label">Total salaires</span>
+            <strong>{{ result.totalSalaryAmount | number: '1.2-2' }} TND</strong>
+          </div>
+          <div>
+            <span class="result-label">Total CNSS</span>
+            <strong>{{ result.totalCnssAmount | number: '1.2-2' }} TND</strong>
+          </div>
+          <div>
+            <span class="result-label">Total paie</span>
+            <strong class="total">{{ result.totalSalaryAmount + result.totalCnssAmount | number: '1.2-2' }} TND</strong>
+          </div>
+        </div>
+        <p class="result-info" *ngIf="result.createdSalaries > 0 || result.createdCnss > 0">
+          {{ result.createdSalaries }} salaire(s) et {{ result.createdCnss }} paiement(s) CNSS generes
+        </p>
+      </div>
+    </form>
+    </div>
+  </section>
 
   <form class="filters" [formGroup]="form">
     <label class="field">
       <span>Recherche</span>
       <input type="text" formControlName="search" placeholder="Nom, prenom, email" />
+    </label>
+
+    <label class="field">
+      <span>Societe</span>
+      <select formControlName="companyId">
+        <option value="">Toutes</option>
+        <option *ngFor="let company of companies()" [value]="company._id">
+          {{ company.companyname }}
+        </option>
+      </select>
     </label>
 
     <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
@@ -23,17 +188,27 @@
   <div class="cards" *ngIf="!loading() && !errorMessage()">
     <article class="card" *ngFor="let employee of employees()">
       <div class="card-header">
-        <div>
+        <div class="card-title">
           <h3>{{ employee.firstName }} {{ employee.lastName }}</h3>
-          <p>{{ employee.email || 'Email non renseigne' }}</p>
+          <p class="muted">{{ employee.companyId?.companyname || employee.companyName || 'Societe non renseignee' }}</p>
         </div>
-        <span class="pill">CNSS: {{ employee.cnssApplicable ? 'Oui' : 'Non' }}</span>
+        <span class="pill" [class.cnss-yes]="employee.cnssApplicable" [class.cnss-no]="!employee.cnssApplicable">
+          {{ employee.cnssApplicable ? 'CNSS' : 'Sans CNSS' }}
+        </span>
       </div>
       <div class="card-body">
-        <p *ngIf="employee.phone">Tel: {{ employee.phone }}</p>
-        <p *ngIf="employee.notes">{{ employee.notes }}</p>
+        <div class="meta">
+          <span>{{ employee.monthlyNetSalary || 0 | number: '1.2-2' }} TND/mois</span>
+          <span *ngIf="employee.cnssApplicable">Taux CNSS: {{ employee.cnssRatePercent || 0 | number: '1.2-2' }}%</span>
+        </div>
+        <p *ngIf="employee.email" class="muted">✉ {{ employee.email }}</p>
+        <p *ngIf="employee.phone" class="muted">☎ {{ employee.phone }}</p>
+        <p *ngIf="employee.notes" class="muted note">{{ employee.notes }}</p>
       </div>
-      <a class="link" [routerLink]="['/employees', employee._id]">Voir fiche</a>
+      <div class="card-actions">
+        <button class="link" type="button" (click)="selectEmployee(employee)">Modifier</button>
+        <button class="link danger" type="button" (click)="deleteEmployee(employee)">Supprimer</button>
+      </div>
     </article>
   </div>
 

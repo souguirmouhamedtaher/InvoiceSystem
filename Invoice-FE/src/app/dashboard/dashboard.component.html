@@ -1,0 +1,116 @@
+<section class="dashboard">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-CAISSE-01</p>
+      <h1>Dashboard caisse</h1>
+      <p class="subtitle">Suivez les flux et le solde de caisse en temps reel.</p>
+    </div>
+  </header>
+
+  <form class="filters" [formGroup]="form">
+    <label class="field">
+      <span>Annee</span>
+      <input type="number" min="2000" formControlName="year" placeholder="2026" />
+    </label>
+
+    <label class="field">
+      <span>Mois</span>
+      <input type="number" min="1" max="12" formControlName="month" placeholder="2" />
+    </label>
+
+    <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
+  </form>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <ng-container *ngIf="!loading() && !errorMessage() && data() as dashboard">
+    <section class="summary-grid">
+      <article class="summary-card">
+        <p>Total ventes</p>
+        <h3>{{ dashboard.totals.totalSales | number: '1.2-2' }}</h3>
+        <span>Encaissements clients</span>
+      </article>
+      <article class="summary-card">
+        <p>Total achats</p>
+        <h3>{{ dashboard.totals.totalPurchases | number: '1.2-2' }}</h3>
+        <span>Decaissements fournisseurs</span>
+      </article>
+      <article class="summary-card">
+        <p>TVA due</p>
+        <h3>{{ dashboard.totals.vatDue | number: '1.2-2' }}</h3>
+        <span>Calcul mensuel</span>
+      </article>
+      <article class="summary-card">
+        <p>TVA payee</p>
+        <h3>{{ dashboard.totals.vatPaid | number: '1.2-2' }}</h3>
+        <span>Reglements TVA</span>
+      </article>
+      <article class="summary-card">
+        <p>Salaires payes</p>
+        <h3>{{ dashboard.totals.salariesPaid | number: '1.2-2' }}</h3>
+        <span>Net verse</span>
+      </article>
+      <article class="summary-card">
+        <p>CNSS payee</p>
+        <h3>{{ dashboard.totals.cnssPaid | number: '1.2-2' }}</h3>
+        <span>Declarations payees</span>
+      </article>
+      <article class="summary-card highlight">
+        <p>Solde caisse</p>
+        <h3>{{ dashboard.totals.cashBalance | number: '1.2-2' }}</h3>
+        <span>Situation actuelle</span>
+      </article>
+    </section>
+
+    <section class="chart-card">
+      <div class="chart-header">
+        <div>
+          <p class="kicker">Historique</p>
+          <h2>Solde par mois</h2>
+        </div>
+        <span class="pill">{{ dashboard.period }}</span>
+      </div>
+      <div class="bar-chart">
+        <div class="bar-row" *ngFor="let entry of dashboard.monthlyBreakdown">
+          <span class="bar-label">{{ entry.month }}</span>
+          <div class="bar-track">
+            <span
+              class="bar"
+              [class.negative]="entry.cashBalance < 0"
+              [style.width.%]="getBarWidth(entry.cashBalance)"
+            ></span>
+          </div>
+          <span class="bar-value">{{ entry.cashBalance | number: '1.2-2' }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-header">
+        <h2>Details mensuels</h2>
+        <span class="pill">{{ dashboard.period }}</span>
+      </div>
+      <div class="table">
+        <div class="row header">
+          <span>Mois</span>
+          <span>Ventes</span>
+          <span>Achats</span>
+          <span>TVA due</span>
+          <span>Salaires</span>
+          <span>CNSS</span>
+          <span>Solde</span>
+        </div>
+        <div class="row" *ngFor="let entry of dashboard.monthlyBreakdown">
+          <span>{{ entry.month }}</span>
+          <span>{{ entry.totalSales | number: '1.2-2' }}</span>
+          <span>{{ entry.totalPurchases | number: '1.2-2' }}</span>
+          <span>{{ entry.vatDue | number: '1.2-2' }}</span>
+          <span>{{ entry.salariesPaid | number: '1.2-2' }}</span>
+          <span>{{ entry.cnssPaid | number: '1.2-2' }}</span>
+          <span>{{ entry.cashBalance | number: '1.2-2' }}</span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</section>

@@ -89,6 +89,10 @@ export class ClientEditComponent {
       notes: this.cleanOptional(this.form.value.notes),
     };
 
+    if (!confirm('Modifier ce client ?')) {
+      return;
+    }
+
     this.saving.set(true);
     this.clientService.updateClient(this.clientId, payload).subscribe({
       next: () => {

@@ -13,6 +13,7 @@ import {
   Employee, EmployeeSchema,
   Salary, SalarySchema,
   CnssPayment, CnssPaymentSchema,
+  TvaPayment, TvaPaymentSchema,
 } from "./models";
 import { MongoDataServices } from "./mongo.service";
 import { SeedService } from "./seed";
@@ -37,6 +38,7 @@ import { SeedService } from "./seed";
       { name: Employee.name, useFactory: () => EmployeeSchema },
       { name: Salary.name, useFactory: () => SalarySchema },
       { name: CnssPayment.name, useFactory: () => CnssPaymentSchema },
+      { name: TvaPayment.name, useFactory: () => TvaPaymentSchema },
     ]),
   ],
 

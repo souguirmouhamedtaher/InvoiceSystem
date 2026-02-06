@@ -41,4 +41,20 @@ export class AnalysisController {
         const m = month ? parseInt(month, 10) : undefined;
         return this.analysisUseCases.getVatCumulative(y, m);
     }
+
+    @Get('cash-dashboard')
+    @ApiOperation({
+        summary: 'Get cash dashboard totals',
+        description: 'Aggregates sales, purchases, VAT, salaries, CNSS, and cash balance by month.'
+    })
+    @ApiQuery({ name: 'year', required: false, type: Number, description: 'Filter by year (e.g. 2025)' })
+    @ApiQuery({ name: 'month', required: false, type: Number, description: 'Filter by month (1-12)' })
+    async getCashDashboard(
+        @Query('year') year?: string,
+        @Query('month') month?: string,
+    ) {
+        const y = year ? parseInt(year, 10) : undefined;
+        const m = month ? parseInt(month, 10) : undefined;
+        return this.analysisUseCases.getCashDashboard(y, m);
+    }
 }

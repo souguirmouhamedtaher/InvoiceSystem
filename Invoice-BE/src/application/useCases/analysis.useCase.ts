@@ -192,6 +192,160 @@ export class AnalysisUseCases {
         };
     }
 
+    async getCashDashboard(year?: number, month?: number) {
+        const [allInvoices, allPurchases, allSalaries, allCnssPayments, allTvaPayments] = await Promise.all([
+            this.dataService.invoice.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
+            this.dataService.purchaseInvoice.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
+            this.dataService.salary.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
+            this.dataService.cnssPayment.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
+            this.dataService.tvaPayment.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
+        ]);
+
+        const treasury = await this.getTreasuryAnalysis();
+        const vatByMonth = new Map<string, number>();
+        treasury.monthlyBreakdown.forEach((entry) => {
+            vatByMonth.set(entry.month, entry.summary?.vatToPay || 0);
+        });
+
+        const monthlyMap = new Map<string, any>();
+
+        const getMonthKey = (dateStr?: string) => {
+            if (!dateStr || dateStr.length < 7) return undefined;
+            return dateStr.substring(0, 7);
+        };
+
+        const ensureMonth = (key: string) => {
+            if (!monthlyMap.has(key)) {
+                monthlyMap.set(key, {
+                    month: key,
+                    totalSales: 0,
+                    totalPurchases: 0,
+                    vatDue: 0,
+                    vatPaid: 0,
+                    salariesPaid: 0,
+                    cnssPaid: 0,
+                    cashBalance: 0,
+                });
+            }
+            return monthlyMap.get(key);
+        };
+
+        allInvoices?.forEach((inv: any) => {
+            const resolvedType = inv.invoiceType || invoiceType.selling;
+            const payments = Array.isArray(inv.payments) ? inv.payments : [];
+
+            if (payments.length > 0) {
+                payments.forEach((payment: any) => {
+                    const key = getMonthKey(payment.date || inv.dateInvoice);
+                    if (!key) return;
+                    const bucket = ensureMonth(key);
+                    if (resolvedType === invoiceType.buying) {
+                        bucket.totalPurchases += Number(payment.amount || 0);
+                    } else {
+                        bucket.totalSales += Number(payment.amount || 0);
+                    }
+                });
+                return;
+            }
+
+            const fallbackAmount = Number(inv.paidAmount || 0);
+            const key = getMonthKey(inv.dateInvoice);
+            if (!key || fallbackAmount <= 0) return;
+            const bucket = ensureMonth(key);
+            if (resolvedType === invoiceType.buying) {
+                bucket.totalPurchases += fallbackAmount;
+            } else {
+                bucket.totalSales += fallbackAmount;
+            }
+        });
+
+        allPurchases?.forEach((pur: any) => {
+            if (!pur.isPaid) return;
+            const key = getMonthKey(pur.date);
+            if (!key) return;
+            const bucket = ensureMonth(key);
+            bucket.totalPurchases += Number(pur.amountTTC || 0);
+        });
+
+        allSalaries?.forEach((salary: any) => {
+            const isPaid = Boolean(salary.isPaid) || Boolean(salary.paidDate);
+            if (!isPaid) return;
+            const key = getMonthKey(salary.paidDate || salary.month);
+            if (!key) return;
+            const bucket = ensureMonth(key);
+            bucket.salariesPaid += Number(salary.netAmount || 0);
+        });
+
+        allCnssPayments?.forEach((payment: any) => {
+            const key = getMonthKey(payment.paymentDate || payment.month);
+            if (!key) return;
+            const bucket = ensureMonth(key);
+            bucket.cnssPaid += Number(payment.amount || 0);
+        });
+
+        allTvaPayments?.forEach((payment: any) => {
+            const key = getMonthKey(payment.paymentDate || payment.month);
+            if (!key) return;
+            const bucket = ensureMonth(key);
+            bucket.vatPaid += Number(payment.amount || 0);
+        });
+
+        vatByMonth.forEach((vatDue, key) => {
+            const bucket = ensureMonth(key);
+            bucket.vatDue = vatDue;
+        });
+
+        const allEntries = Array.from(monthlyMap.values()).map((entry) => ({
+            ...entry,
+            cashBalance:
+                entry.totalSales -
+                (entry.totalPurchases + entry.vatPaid + entry.salariesPaid + entry.cnssPaid),
+        }));
+
+        const sortedEntries = allEntries.sort((a, b) => a.month.localeCompare(b.month));
+
+        let filteredResults = sortedEntries;
+        if (year) {
+            const yearStr = year.toString();
+            if (month) {
+                const monthStr = month.toString().padStart(2, '0');
+                const targetKey = `${yearStr}-${monthStr}`;
+                filteredResults = sortedEntries.filter((entry) => entry.month === targetKey);
+            } else {
+                filteredResults = sortedEntries.filter((entry) => entry.month.startsWith(yearStr));
+            }
+        }
+
+        const totals = {
+            totalSales: 0,
+            totalPurchases: 0,
+            vatDue: 0,
+            vatPaid: 0,
+            salariesPaid: 0,
+            cnssPaid: 0,
+            cashBalance: 0,
+        };
+
+        filteredResults.forEach((entry) => {
+            totals.totalSales += entry.totalSales;
+            totals.totalPurchases += entry.totalPurchases;
+            totals.vatDue += entry.vatDue;
+            totals.vatPaid += entry.vatPaid;
+            totals.salariesPaid += entry.salariesPaid;
+            totals.cnssPaid += entry.cnssPaid;
+        });
+
+        totals.cashBalance =
+            totals.totalSales -
+            (totals.totalPurchases + totals.vatPaid + totals.salariesPaid + totals.cnssPaid);
+
+        return {
+            period: year ? (month ? `${month}/${year}` : `${year}`) : 'All Time',
+            totals,
+            monthlyBreakdown: filteredResults,
+        };
+    }
+
     private getDefaultMonthlyData() {
         return {
             sales: {

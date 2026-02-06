@@ -1,0 +1,48 @@
+<section class="tva-payments-create">
+  <header class="page-header">
+    <div>
+      <p class="kicker">US-TVA-03</p>
+      <h1>Ajouter un paiement TVA</h1>
+      <p class="subtitle">Enregistrez un paiement TVA pour un mois donne.</p>
+    </div>
+    <div class="badge">TVA</div>
+  </header>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <label class="field">
+        <span>Mois</span>
+        <input type="month" formControlName="month" />
+      </label>
+
+      <label class="field">
+        <span>Montant</span>
+        <input type="number" min="0" step="0.01" formControlName="amount" />
+      </label>
+
+      <label class="field">
+        <span>Date de paiement</span>
+        <input type="date" formControlName="paymentDate" />
+      </label>
+
+      <label class="field">
+        <span>Preuve (URL)</span>
+        <input type="text" formControlName="proofUrl" />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Notes</span>
+      <textarea rows="3" formControlName="notes"></textarea>
+    </label>
+
+    <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+    <div class="actions">
+      <button class="ghost" type="button" [disabled]="saving()" (click)="form.reset()">Effacer</button>
+      <button class="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</section>

@@ -17,6 +17,7 @@ import {
     EmployeeController,
     SalaryController,
     CnssPaymentController,
+    TvaPaymentController,
 } from './controllers';
 
 @Module({
@@ -34,6 +35,7 @@ import {
         EmployeeController,
         SalaryController,
         CnssPaymentController,
+        TvaPaymentController,
     ],
     providers: [AccessTokenStrategy, RefreshTokenStrategy],
 })

@@ -22,6 +22,7 @@ import {
     EmployeeUseCases,
     SalaryUseCases,
     CnssPaymentUseCases,
+    TvaPaymentUseCases,
 } from './useCases';
 
 @Module({
@@ -48,6 +49,7 @@ import {
         EmployeeUseCases,
         SalaryUseCases,
         CnssPaymentUseCases,
+        TvaPaymentUseCases,
     ],
     exports: [
         UserFactory,
@@ -69,6 +71,7 @@ import {
         EmployeeUseCases,
         SalaryUseCases,
         CnssPaymentUseCases,
+        TvaPaymentUseCases,
     ],
 })
 export class ApplicationLayerModule { }

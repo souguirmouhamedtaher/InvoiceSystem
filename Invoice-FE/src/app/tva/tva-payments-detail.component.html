@@ -1,0 +1,39 @@
+<section class="tva-payments-detail" *ngIf="payment(); else loading">
+  <header>
+    <p class="kicker">Paiement TVA</p>
+    <h1>{{ payment()?.month }}</h1>
+    <p class="subtitle">Date: {{ payment()?.paymentDate }}</p>
+  </header>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Montant</h3>
+      <p>{{ payment()?.amount | number: '1.2-2' }}</p>
+    </article>
+
+    <article class="card" *ngIf="payment()?.notes">
+      <h3>Notes</h3>
+      <p>{{ payment()?.notes }}</p>
+    </article>
+
+    <article class="card" *ngIf="payment()?.proofUrl">
+      <h3>Preuve</h3>
+      <a [href]="payment()?.proofUrl" target="_blank" rel="noopener">Voir la preuve</a>
+    </article>
+  </div>
+
+  <div class="actions">
+    <a routerLink="/tva-payments" class="ghost">Retour</a>
+    <a routerLink="/tva-payments/new" class="primary">Ajouter un paiement</a>
+    <button type="button" class="ghost danger" (click)="deletePayment()">Supprimer</button>
+  </div>
+</section>
+
+<ng-template #loading>
+  <section class="tva-payments-detail">
+    <div class="card" *ngIf="errorMessage(); else spinner">{{ errorMessage() }}</div>
+    <ng-template #spinner>
+      <div class="card">Chargement...</div>
+    </ng-template>
+  </section>
+</ng-template>

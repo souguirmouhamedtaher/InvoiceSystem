@@ -24,6 +24,7 @@ export class EmployeeService {
     page: number;
     limit: number;
     search?: string;
+    companyId?: string;
   }): Observable<EmployeeListResponse> {
     const query = new HttpParams({
       fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
@@ -55,6 +56,68 @@ export class EmployeeService {
   deleteEmployee(id: string): Observable<{ success: boolean }> {
     return this.http
       .delete<ApiResponse<{ success: boolean }>>(`${environment.apiBaseUrl}/employee/${id}`)
+      .pipe(map((response) => response.data));
+  }
+
+  generateMonthlyPayroll(payload: {
+    month: string;
+    companyId?: string;
+  }): Observable<{
+    month: string;
+    companyId: string | null;
+    payrollDate: string;
+    createdSalaries: number;
+    skippedSalaries: number;
+    createdCnss: number;
+    skippedCnss: number;
+    totalSalaryAmount: number;
+    totalCnssAmount: number;
+  }> {
+    return this.http
+      .post<
+        ApiResponse<{
+          month: string;
+          companyId: string | null;
+          payrollDate: string;
+          createdSalaries: number;
+          skippedSalaries: number;
+          createdCnss: number;
+          skippedCnss: number;
+          totalSalaryAmount: number;
+          totalCnssAmount: number;
+        }>
+      >(`${environment.apiBaseUrl}/employee/generate-monthly`, payload)
+      .pipe(map((response) => response.data));
+  }
+
+  getPayrollSummary(params: {
+    month: string;
+    companyId?: string;
+  }): Observable<{
+    month: string;
+    totalSalaryAmount: number;
+    totalCnssAmount: number;
+    salaryCount: number;
+    cnssCount: number;
+  }> {
+    const query = new HttpParams({
+      fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
+        if (value === undefined || value === null || value === '') {
+          return acc;
+        }
+        acc[key] = String(value);
+        return acc;
+      }, {}),
+    });
+
+    return this.http
+      .get<ApiResponse<{
+        month: string;
+        totalSalaryAmount: number;
+        totalCnssAmount: number;
+        salaryCount: number;
+        cnssCount: number;
+      }>>(`${environment.apiBaseUrl}/employee/payroll/summary`, { params: query })
       .pipe(map((response) => response.data));
   }
 }

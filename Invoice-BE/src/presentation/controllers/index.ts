@@ -12,5 +12,6 @@ export * from "./analysis.controller"
 export * from "./employee.controller"
 export * from "./salary.controller"
 export * from "./cnssPayment.controller"
+export * from "./tvaPayment.controller"
 
 

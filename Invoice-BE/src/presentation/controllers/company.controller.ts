@@ -16,6 +16,7 @@ import { CompanyUseCases } from '../../application/useCases';
 import { CreateCompanyDto, UpdateCompanyDto } from '../../application/dtos';
 import { Company } from '../../domain/entities';
 import { AccessTokenGuard } from '../guards/accessToken.guard';
+import { UserDecorator } from '../decorators/getUser.decorator';
 
 @ApiTags('Facturation|Company')
 @Controller('company')
@@ -26,8 +27,8 @@ export class CompanyController {
 
     @Post()
     @ApiBearerAuth()
-    async createCompany(@Body() createCompanyDto: CreateCompanyDto): Promise<Company> {
-        return this.companyUseCases.createCompany(createCompanyDto);
+    async createCompany(@UserDecorator() user, @Body() createCompanyDto: CreateCompanyDto): Promise<Company> {
+        return this.companyUseCases.createCompany(user._id, createCompanyDto);
     }
 
     @Get()
@@ -38,34 +39,35 @@ export class CompanyController {
     @ApiQuery({ name: 'companyType', required: false, type: String, description: 'Filter by company type (mycompany/client)' })
     @ApiQuery({ name: 'city', required: false, type: String })
     @ApiQuery({ name: 'country', required: false, type: String })
-    async getAllCompanies(@Query() query): Promise<{ companies: Company[]; totalCompanies: number }> {
+    async getAllCompanies(@UserDecorator() user, @Query() query): Promise<{ companies: Company[]; totalCompanies: number }> {
         const page = parseInt(query.page, 10) || 1;
         const limit = parseInt(query.limit, 10) || 20;
 
         const { page: _, limit: __, ...search } = query;
 
-        return await this.companyUseCases.getAllCompanies(page, limit, search);
+        return await this.companyUseCases.getAllCompanies(user._id, page, limit, search);
     }
 
     @Get(':id')
     @ApiBearerAuth()
-    async getCompanyById(@Param('id') id: string): Promise<Company> {
-        return this.companyUseCases.getCompanyById(id);
+    async getCompanyById(@UserDecorator() user, @Param('id') id: string): Promise<Company> {
+        return this.companyUseCases.getCompanyById(user._id, id);
     }
 
     @Patch(':id')
     @ApiBearerAuth()
     async updateCompany(
+        @UserDecorator() user,
         @Param('id') id: string,
         @Body() updateCompanyDto: UpdateCompanyDto
     ): Promise<Company> {
-        return this.companyUseCases.updateCompany(id, updateCompanyDto);
+        return this.companyUseCases.updateCompany(user._id, id, updateCompanyDto);
     }
 
     @Delete(':id')
     @ApiBearerAuth()
-    async deleteCompany(@Param('id') id: string): Promise<{ success: boolean }> {
-        const result = await this.companyUseCases.deleteCompany(id);
+    async deleteCompany(@UserDecorator() user, @Param('id') id: string): Promise<{ success: boolean }> {
+        const result = await this.companyUseCases.deleteCompany(user._id, id);
         return { success: result };
     }
 }

@@ -5,7 +5,13 @@ export const routes: Routes = [
 	{
 		path: '',
 		pathMatch: 'full',
-		redirectTo: 'clients',
+		redirectTo: 'dashboard',
+	},
+	{
+		path: 'dashboard',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./dashboard').then((m) => m.DashboardComponent),
 	},
 	{
 		path: 'clients',
@@ -74,6 +80,24 @@ export const routes: Routes = [
 			import('./tva/tva-monthly.component').then((m) => m.TvaMonthlyComponent),
 	},
 	{
+		path: 'tva-payments',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./tva').then((m) => m.TvaPaymentsListComponent),
+	},
+	{
+		path: 'tva-payments/new',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./tva').then((m) => m.TvaPaymentsCreateComponent),
+	},
+	{
+		path: 'tva-payments/:id',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./tva').then((m) => m.TvaPaymentsDetailComponent),
+	},
+	{
 		path: 'tva-cumulative',
 		canActivate: [authGuard],
 		loadComponent: () =>
@@ -103,51 +127,35 @@ export const routes: Routes = [
 	},
 	{
 		path: 'employees/new',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./employees').then((m) => m.EmployeeCreateComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'employees/:id',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./employees').then((m) => m.EmployeeDetailComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'salaries',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./salaries').then((m) => m.SalaryListComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'salaries/new',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./salaries').then((m) => m.SalaryCreateComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'salaries/:id',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./salaries').then((m) => m.SalaryDetailComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'cnss',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./cnss').then((m) => m.CnssListComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'cnss/new',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./cnss').then((m) => m.CnssCreateComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'cnss/:id',
-		canActivate: [authGuard],
-		loadComponent: () =>
-			import('./cnss').then((m) => m.CnssDetailComponent),
+		redirectTo: 'employees',
 	},
 	{
 		path: 'invoices',
@@ -182,6 +190,6 @@ export const routes: Routes = [
 	},
 	{
 		path: '**',
-		redirectTo: 'clients',
+		redirectTo: 'dashboard',
 	},
 ];

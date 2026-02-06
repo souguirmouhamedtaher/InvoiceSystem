@@ -2,6 +2,7 @@ import { Base } from './base.entity';
 import { companyType } from '../enums/company.enums';
 
 export class Company extends Base {
+    userId: any;
     companyname: string;
     companyType: companyType;
     logo: string;

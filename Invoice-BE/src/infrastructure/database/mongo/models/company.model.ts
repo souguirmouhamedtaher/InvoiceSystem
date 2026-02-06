@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { companyType } from 'src/domain/enums/company.enums';
+import { User } from './user.model';
 
 export type CompanyDocument = Company & Document;
 
@@ -8,6 +9,9 @@ export type CompanyDocument = Company & Document;
 @Schema()
 export class Company {
     _id: Types.ObjectId
+
+    @Prop({ type: Types.ObjectId, ref: User.name, required: true })
+    userId: User;
     
    @Prop()
     companyname : string;

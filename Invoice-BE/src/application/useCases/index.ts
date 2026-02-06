@@ -13,6 +13,7 @@ export * from "./analysis.useCase"
 export * from "./employee.useCase"
 export * from "./salary.useCase"
 export * from "./cnssPayment.useCase"
+export * from "./tvaPayment.useCase"
 
 
 
