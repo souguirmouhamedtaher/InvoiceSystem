@@ -23,6 +23,7 @@ export class InvoiceListComponent {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly currentInvoiceType = signal<'all' | 'selling' | 'buying'>('all');
+  protected readonly availableMemberships = signal<any[]>([]);
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
@@ -39,11 +40,17 @@ export class InvoiceListComponent {
 
   constructor(
     private invoiceService: InvoiceService,
-    private companySwitcher: CompanySwitcherService
+    protected companySwitcher: CompanySwitcherService
   ) {
     this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
       const type = data['invoiceType'] as 'selling' | 'buying' | undefined;
       this.applyInvoiceTypeFilter(type);
+    });
+
+    // Watch for company membership changes and update dropdown
+    effect(() => {
+      const memberships = this.companySwitcher.availableMemberships();
+      this.availableMemberships.set(memberships);
     });
 
     // Watch for company changes and reload invoices
@@ -57,6 +64,10 @@ export class InvoiceListComponent {
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadInvoices(1));
+  }
+
+  selectCompany(companyId: string): void {
+    this.companySwitcher.selectCompany(companyId);
   }
 
   get totalPages(): number {
