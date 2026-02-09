@@ -24,6 +24,7 @@ import {
     CnssPaymentUseCases,
     TvaPaymentUseCases,
 } from './useCases';
+import { XmlGeneratorService } from './services/xml-generator.service';
 
 @Module({
     imports: [
@@ -50,6 +51,7 @@ import {
         SalaryUseCases,
         CnssPaymentUseCases,
         TvaPaymentUseCases,
+        XmlGeneratorService,
     ],
     exports: [
         UserFactory,
@@ -72,6 +74,7 @@ import {
         SalaryUseCases,
         CnssPaymentUseCases,
         TvaPaymentUseCases,
+        XmlGeneratorService,
     ],
 })
 export class ApplicationLayerModule { }

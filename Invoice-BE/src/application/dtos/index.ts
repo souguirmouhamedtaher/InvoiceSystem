@@ -32,6 +32,8 @@ export * from './APPlogic/purchaseInvoice/updatePurchaseInvoice.dto'
 export * from './APPlogic/employee/createEmployee.dto'
 export * from './APPlogic/employee/generatePayroll.dto'
 export * from './APPlogic/employee/updateEmployee.dto'
+export * from './APPlogic/employee/importEmployeeCsv.dto'
+export * from './APPlogic/employee/importEmployeeCsvResult.dto'
 
 // salary dtos
 export * from './APPlogic/salary/createSalary.dto'
@@ -50,6 +52,7 @@ export * from './APPlogic/tvaPayment/updateTvaPayment.dto'
 //super admin dtos
 export * from './APPlogic/superAdmin/createSuperAdmin.dto'
 export * from './APPlogic/superAdmin/updateSuperAdmin.dto'
+export * from './APPlogic/superAdmin/assignUserToCompany.dto'
 
 // AuthDto
 export * from './auth/forgotPassword.dto'

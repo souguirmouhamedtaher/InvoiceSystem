@@ -9,4 +9,6 @@ export * from "./employee.model"
 export * from "./salary.model"
 export * from "./cnssPayment.model"
 export * from "./tvaPayment.model"
+export * from "./companyMembership.model"
+export * from "./auditLog.model"
 

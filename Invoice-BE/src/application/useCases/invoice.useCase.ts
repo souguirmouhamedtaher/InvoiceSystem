@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
 import { Invoice, Libelle } from 'src/domain/entities';
 import { companyType } from 'src/domain/enums/company.enums';
@@ -6,21 +6,33 @@ import { invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
 import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
 import { InvoiceFactory } from '../factoryMapper';
 import { buildInvoicePdfBuffer, InvoicePdfTotals, VatSummaryRow } from '../utils/invoice-pdf';
+import { Types } from 'mongoose';
+import { CompanyRole } from 'src/domain/enums/companyRole.enums';
+import { Role } from 'src/domain/enums/role.enums';
+import { XmlGeneratorService } from '../services/xml-generator.service';
+
+type RequestUser = {
+  _id: string;
+  roles?: string[];
+};
 
 @Injectable()
 export class InvoiceUseCases {
   constructor(
     private dataService: IDataServices,
-    private invoiceFactory: InvoiceFactory
+    private invoiceFactory: InvoiceFactory,
+    private xmlGeneratorService: XmlGeneratorService
   ) { }
 
   async getAllInvoices(
+    user: RequestUser,
     page: number = 1,
     limit: number = 20,
     search?: { [key: string]: any }
   ): Promise<{ invoices: Invoice[]; totalInvoices: number }> {
     const query: any = { deletedAt: null };
     const orQueries: any[] = [];
+    let companyIdFilter: string | undefined;
 
     if (search) {
       for (const [key, value] of Object.entries(search)) {
@@ -33,6 +45,9 @@ export class InvoiceUseCases {
           orQueries.push({ username: searchRegex });
           orQueries.push({ invoiceNumber: searchRegex });
           orQueries.push({ applicationName: searchRegex });
+        } else if ((key === 'companyId' || key === 'mycompanyId') && typeof value === 'string') {
+          companyIdFilter = value;
+          query.mycompanyId = new Types.ObjectId(value);
         } else if (key === 'clientType' && value) {
           query.clientType = value;
         } else if (key === 'invoiceStatus' && value) {
@@ -49,6 +64,13 @@ export class InvoiceUseCases {
       }
     }
 
+    if (!this.isAdmin(user.roles)) {
+      if (!companyIdFilter) {
+        throw new ForbiddenException('companyId is required.');
+      }
+      await this.assertCompanyMembership(user._id, companyIdFilter, [CompanyRole.ACCOUNTANT]);
+    }
+
     const finalQuery = orQueries.length > 0 ? { $and: [query, { $or: orQueries }] } : query;
     const invoices = await this.dataService.invoice.findAllByAttributeWithFilter(finalQuery, page, limit, { createdAt: -1 });
     const totalInvoices = await this.dataService.invoice.count(finalQuery);
@@ -56,9 +78,18 @@ export class InvoiceUseCases {
     return { invoices, totalInvoices };
   }
 
-  async getInvoiceById(id: string): Promise<Invoice> {
+  async getInvoiceById(user: RequestUser, id: string): Promise<Invoice> {
     const invoice = await this.dataService.invoice.get(id);
     if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    if (!this.isAdmin(user.roles)) {
+      const companyId = invoice.mycompanyId?.toString();
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
+
     return invoice;
   }
 
@@ -100,7 +131,7 @@ export class InvoiceUseCases {
   /**
    * Calculate invoice totals without creating it
    */
-  async calculateInvoice(invoiceData: CreateInvoiceDto): Promise<{
+  async calculateInvoice(user: RequestUser, invoiceData: CreateInvoiceDto): Promise<{
     totalHT: string;
     totalTTC: string;
     totalTax: string;
@@ -111,6 +142,13 @@ export class InvoiceUseCases {
     totalTTC_final?: string;
     montantInternational?: number;
   }> {
+    if (!this.isAdmin(user.roles)) {
+      if (!invoiceData.mycompanyId) {
+        throw new ForbiddenException('mycompanyId is required.');
+      }
+      await this.assertCompanyMembership(user._id, invoiceData.mycompanyId, [CompanyRole.ACCOUNTANT]);
+    }
+
     // Validate that libelles are provided
     if (!invoiceData.Libelle || invoiceData.Libelle.length === 0) {
       throw new BadRequestException('Invoice must have at least one libelle.');
@@ -155,8 +193,15 @@ export class InvoiceUseCases {
     return totals;
   }
 
-  async createInvoice(invoiceToCreate: CreateInvoiceDto): Promise<Invoice> {
+  async createInvoice(user: RequestUser, invoiceToCreate: CreateInvoiceDto): Promise<Invoice> {
     const resolvedInvoiceType = invoiceToCreate.invoiceType ?? invoiceType.selling;
+
+    if (!this.isAdmin(user.roles)) {
+      if (!invoiceToCreate.mycompanyId) {
+        throw new ForbiddenException('mycompanyId is required.');
+      }
+      await this.assertCompanyMembership(user._id, invoiceToCreate.mycompanyId, [CompanyRole.ACCOUNTANT]);
+    }
 
     if (resolvedInvoiceType === invoiceType.selling && !invoiceToCreate.clientId) {
       throw new BadRequestException('Client is required for selling invoices.');
@@ -236,9 +281,17 @@ export class InvoiceUseCases {
     return await this.dataService.invoice.create(invoice);
   }
 
-  async updateInvoice(id: string, invoiceToUpdate: UpdateInvoiceDto): Promise<Invoice> {
+  async updateInvoice(user: RequestUser, id: string, invoiceToUpdate: UpdateInvoiceDto): Promise<Invoice> {
     const existingInvoice = await this.dataService.invoice.get(id);
     if (!existingInvoice) throw new NotFoundException('Invoice not found.');
+
+    if (!this.isAdmin(user.roles)) {
+      const companyId = existingInvoice.mycompanyId?.toString();
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
 
     // If libelles are updated, recalculate totals
     let totals: { totalHT: string; totalTTC: string; totalTax: string; totalDiscount: string; timbre?: string; totalTTC_final?: string } | undefined;
@@ -286,9 +339,17 @@ export class InvoiceUseCases {
     return await this.dataService.invoice.update(id, invoice);
   }
 
-  async addInvoicePayment(id: string, payload: AddInvoicePaymentDto): Promise<Invoice> {
+  async addInvoicePayment(user: RequestUser, id: string, payload: AddInvoicePaymentDto): Promise<Invoice> {
     const invoice = await this.dataService.invoice.get(id);
     if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    if (!this.isAdmin(user.roles)) {
+      const companyId = invoice.mycompanyId?.toString();
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
 
     const totalTTC = Number(invoice.totalTTC || 0);
     const paidAmount = Number(invoice.paidAmount || 0);
@@ -320,16 +381,32 @@ export class InvoiceUseCases {
     return await this.dataService.invoice.update(id, updatePayload);
   }
 
-  async deleteInvoice(id: string): Promise<boolean> {
+  async deleteInvoice(user: RequestUser, id: string): Promise<boolean> {
     const invoice = await this.dataService.invoice.get(id);
     if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    if (!this.isAdmin(user.roles)) {
+      const companyId = invoice.mycompanyId?.toString();
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
 
     return await this.dataService.invoice.delete(id);
   }
 
-  async generateInvoicePdf(id: string): Promise<Buffer> {
+  async generateInvoicePdf(user: RequestUser, id: string): Promise<Buffer> {
     const invoice = await this.dataService.invoice.get(id);
     if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    if (!this.isAdmin(user.roles)) {
+      const companyId = invoice.mycompanyId?.toString();
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
 
     const vatMap = new Map<number, { base: number; tva: number }>();
     const libelles = Array.isArray(invoice.Libelle) ? invoice.Libelle : [];
@@ -382,15 +459,89 @@ export class InvoiceUseCases {
     });
   }
 
+  async generateInvoiceXml(user: RequestUser, id: string): Promise<string> {
+    // Fetch invoice with populated references
+    const invoice = await this.dataService.invoice.get(id);
+    if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    // Check permissions
+    if (!this.isAdmin(user.roles)) {
+      const companyId = invoice.mycompanyId?.toString();
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
+
+    // Get company and client details
+    const company = invoice.mycompanyId;
+    const client = invoice.invoiceType === invoiceType.buying
+      ? invoice.supplierId
+      : invoice.clientId;
+
+    if (!company) {
+      throw new BadRequestException('Invoice company information is missing.');
+    }
+
+    if (!client) {
+      throw new BadRequestException('Invoice client/supplier information is missing.');
+    }
+
+    // Generate XML using XmlGeneratorService
+    return this.xmlGeneratorService.generateInvoiceXml(invoice, company, client);
+  }
+
+  private isAdmin(roles?: string[]): boolean {
+    return roles?.includes(Role.SUPERADMIN) ?? false;
+  }
+
+  private async assertCompanyMembership(
+    userId: string,
+    companyId: string,
+    allowedRoles: CompanyRole[]
+  ): Promise<void> {
+    const membership = await this.dataService.companyMembership.findAllByAttributeWithFilter(
+      {
+        deletedAt: null,
+        userId: new Types.ObjectId(userId),
+        companyId: new Types.ObjectId(companyId),
+      },
+      1,
+      1
+    );
+
+    if (!membership || membership.length === 0) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    if (allowedRoles.length && !allowedRoles.includes(membership[0].role)) {
+      throw new ForbiddenException('Insufficient role for this action.');
+    }
+  }
+
   /**
    * Get invoice statistics
    */
-  async getInvoiceStats(): Promise<{
+  async getInvoiceStats(user: RequestUser, companyId?: string): Promise<{
     totalInvoices: number;
     totalAmount: number;
     byStatus: { [key: string]: number };
   }> {
-    const allInvoices = await this.dataService.invoice.getAll();
+    const isAdmin = this.isAdmin(user.roles);
+    const query: any = { deletedAt: null };
+
+    if (companyId) {
+      query.mycompanyId = new Types.ObjectId(companyId);
+    }
+
+    if (!isAdmin) {
+      if (!companyId) {
+        throw new ForbiddenException('companyId is required.');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
+
+    const allInvoices = await this.dataService.invoice.findAllByAttributeWithFilter(query, 1, 100000);
 
     const stats = {
       totalInvoices: allInvoices.length,
@@ -413,14 +564,26 @@ export class InvoiceUseCases {
   /**
    * Get invoices by date range
    */
-  async getInvoicesByDateRange(startDate: string, endDate: string): Promise<Invoice[]> {
-    const query = {
+  async getInvoicesByDateRange(user: RequestUser, startDate: string, endDate: string, companyId?: string): Promise<Invoice[]> {
+    const isAdmin = this.isAdmin(user.roles);
+    const query: any = {
       dateInvoice: {
         $gte: startDate,
         $lte: endDate
       },
       deletedAt: null
     };
+
+    if (companyId) {
+      query.mycompanyId = new Types.ObjectId(companyId);
+    }
+
+    if (!isAdmin) {
+      if (!companyId) {
+        throw new ForbiddenException('companyId is required.');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+    }
 
     return await this.dataService.invoice.findAllByAttributeWithFilter(query, 1, 1000, { createdAt: -1 });
   }

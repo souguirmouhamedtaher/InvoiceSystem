@@ -45,13 +45,13 @@ export class CompanyController {
 
         const { page: _, limit: __, ...search } = query;
 
-        return await this.companyUseCases.getAllCompanies(user._id, page, limit, search);
+        return await this.companyUseCases.getAllCompanies(user, page, limit, search);
     }
 
     @Get(':id')
     @ApiBearerAuth()
     async getCompanyById(@UserDecorator() user, @Param('id') id: string): Promise<Company> {
-        return this.companyUseCases.getCompanyById(user._id, id);
+        return this.companyUseCases.getCompanyById(user, id);
     }
 
     @Patch(':id')
@@ -61,13 +61,13 @@ export class CompanyController {
         @Param('id') id: string,
         @Body() updateCompanyDto: UpdateCompanyDto
     ): Promise<Company> {
-        return this.companyUseCases.updateCompany(user._id, id, updateCompanyDto);
+        return this.companyUseCases.updateCompany(user, id, updateCompanyDto);
     }
 
     @Delete(':id')
     @ApiBearerAuth()
     async deleteCompany(@UserDecorator() user, @Param('id') id: string): Promise<{ success: boolean }> {
-        const result = await this.companyUseCases.deleteCompany(user._id, id);
+        const result = await this.companyUseCases.deleteCompany(user, id);
         return { success: result };
     }
 }

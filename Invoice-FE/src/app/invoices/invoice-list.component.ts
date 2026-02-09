@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Invoice, InvoiceListResponse } from './invoice.model';
 import { InvoiceService } from './invoice.service';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-invoice-list',
@@ -36,10 +37,21 @@ export class InvoiceListComponent {
     dateTo: [''],
   });
 
-  constructor(private invoiceService: InvoiceService) {
+  constructor(
+    private invoiceService: InvoiceService,
+    private companySwitcher: CompanySwitcherService
+  ) {
     this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
       const type = data['invoiceType'] as 'selling' | 'buying' | undefined;
       this.applyInvoiceTypeFilter(type);
+    });
+
+    // Watch for company changes and reload invoices
+    effect(() => {
+      const currentCompanyId = this.companySwitcher.currentCompanyId();
+      if (currentCompanyId) {
+        this.loadInvoices(1);
+      }
     });
 
     this.form.valueChanges
@@ -111,6 +123,7 @@ export class InvoiceListComponent {
     const invoiceStatus = this.form.value.invoiceStatus || 'all';
     const dateFrom = (this.form.value.dateFrom || '').trim();
     const dateTo = (this.form.value.dateTo || '').trim();
+    const currentCompanyId = this.companySwitcher.currentCompanyId();
 
     if (search.length) {
       filters['search'] = search;
@@ -135,6 +148,10 @@ export class InvoiceListComponent {
 
     if (dateTo.length) {
       filters['dateTo'] = dateTo;
+    }
+
+    if (currentCompanyId) {
+      filters['companyId'] = currentCompanyId;
     }
 
     return filters;

@@ -47,6 +47,15 @@ lerna-debug.log*
 .temp
 .tmp
 
+# Test data and seed files
+test-data-seed.js
+seed-*.js
+*-seed.js
+check-*.js
+sample-*.csv
+TEST-DATA-README.md
+TESTING-QUICK-REFERENCE.txt
+
 # Runtime data
 pids
 *.pid

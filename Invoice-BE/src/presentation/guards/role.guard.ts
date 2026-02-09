@@ -15,7 +15,12 @@ export class RolesGuard implements CanActivate {
         if (!requiredRoles) return true; // If no roles are required, allow access
 
         const { user } = context.switchToHttp().getRequest();
+        const normalizedRoles = (user.roles || []).map((role: string) => {
+            const lowered = role.toLowerCase();
+            if (lowered === 'superadmin') return Role.SUPERADMIN;
+            return lowered;
+        });
 
-        return requiredRoles.some((role) => user.roles?.includes(role));
+        return requiredRoles.some((role) => normalizedRoles.includes(role));
     }
 }

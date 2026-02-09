@@ -14,6 +14,8 @@ import {
   Salary, SalarySchema,
   CnssPayment, CnssPaymentSchema,
   TvaPayment, TvaPaymentSchema,
+  CompanyMembership, CompanyMembershipSchema,
+  AuditLog, AuditLogSchema,
 } from "./models";
 import { MongoDataServices } from "./mongo.service";
 import { SeedService } from "./seed";
@@ -39,6 +41,8 @@ import { SeedService } from "./seed";
       { name: Salary.name, useFactory: () => SalarySchema },
       { name: CnssPayment.name, useFactory: () => CnssPaymentSchema },
       { name: TvaPayment.name, useFactory: () => TvaPaymentSchema },
+      { name: CompanyMembership.name, useFactory: () => CompanyMembershipSchema },
+      { name: AuditLog.name, useFactory: () => AuditLogSchema },
     ]),
   ],
 

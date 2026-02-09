@@ -182,6 +182,62 @@
     <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
   </form>
 
+  <section class="form-card csv-card">
+    <div class="form-header">
+      <h2>Import / Export CSV</h2>
+      <p class="subtitle">Importez ou exportez les employes de votre societe.</p>
+    </div>
+    <form class="employee-form" [formGroup]="csvForm">
+      <div class="grid">
+        <label class="field">
+          <span>Societe</span>
+          <select formControlName="companyId">
+            <option value="">Selectionner</option>
+            <option *ngFor="let company of companies()" [value]="company._id">
+              {{ company.companyname }}
+            </option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Fichier CSV</span>
+          <input type="file" accept=".csv" (change)="onCsvFileSelected($event)" />
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="ghost" type="button" [disabled]="importing()" (click)="exportEmployeesCsv()">
+          Exporter
+        </button>
+        <button class="primary" type="button" [disabled]="importing()" (click)="importEmployeesCsv()">
+          {{ importing() ? 'Import...' : 'Importer' }}
+        </button>
+      </div>
+
+      <div class="result" *ngIf="importMessage()">{{ importMessage() }}</div>
+      <div class="error" *ngIf="importError()">{{ importError() }}</div>
+
+      <div class="csv-errors" *ngIf="csvImportErrors().length > 0">
+        <h3>Erreurs d'importation detaillees :</h3>
+        <div class="error-list">
+          <div class="error-item" *ngFor="let err of csvImportErrors()">
+            <div class="error-header">
+              <strong>Ligne {{ err.row }}:</strong>
+              <span class="error-count">{{ err.errors.length }} erreur(s)</span>
+            </div>
+            <ul class="error-messages">
+              <li *ngFor="let msg of err.errors">{{ msg }}</li>
+            </ul>
+            <div class="error-data">
+              <strong>Donnees:</strong>
+              <code>{{ err.data | json }}</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
   <div class="state" *ngIf="loading()">Chargement...</div>
   <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
 

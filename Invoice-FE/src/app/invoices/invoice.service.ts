@@ -37,6 +37,7 @@ export class InvoiceService {
     invoiceStatus?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }): Observable<InvoiceListResponse> {
     const query = new HttpParams({
       fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
@@ -63,6 +64,12 @@ export class InvoiceService {
 
   downloadInvoicePdf(id: string): Observable<Blob> {
     return this.http.get(`${environment.apiBaseUrl}/invoice/${id}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  downloadInvoiceXml(id: string): Observable<Blob> {
+    return this.http.get(`${environment.apiBaseUrl}/invoice/${id}/xml`, {
       responseType: 'blob',
     });
   }

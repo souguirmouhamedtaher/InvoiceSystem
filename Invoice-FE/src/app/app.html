@@ -5,6 +5,8 @@
       <span class="brand-sub">Studio</span>
     </div>
 
+    <app-company-switcher></app-company-switcher>
+
     <nav class="sidebar-nav">
       <div class="nav-group">
         <p class="nav-title">Caisse</p>
@@ -48,6 +50,12 @@
       <div class="nav-group">
         <p class="nav-title">Paie</p>
         <a class="nav-link" routerLink="/employees" routerLinkActive="active">Employes</a>
+      </div>
+
+      <div class="nav-group" *ngIf="auth.isSuperAdmin()">
+        <p class="nav-title">Administration</p>
+        <a class="nav-link" routerLink="/admin/company-memberships" routerLinkActive="active">Membres</a>
+        <a class="nav-link" routerLink="/admin/audit-logs" routerLinkActive="active">Journal d'audit</a>
       </div>
     </nav>
 

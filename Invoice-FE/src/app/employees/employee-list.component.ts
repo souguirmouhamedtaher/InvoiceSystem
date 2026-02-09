@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,6 +7,7 @@ import { CreateEmployeePayload, Employee, EmployeeListResponse, UpdateEmployeePa
 import { EmployeeService } from './employee.service';
 import { Client, ClientListResponse } from '../clients/client.model';
 import { ClientService } from '../clients/client.service';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-employee-list',
@@ -44,8 +45,14 @@ export class EmployeeListComponent {
     cnssCount: number;
   } | null>(null);
   protected readonly summaryMonth = signal<string>('');
+  protected readonly summaryCompanyId = signal<string | undefined>(undefined);
   protected readonly showEmployeeForm = signal(false);
   protected readonly showPayrollForm = signal(false);
+  protected readonly importing = signal(false);
+  protected readonly importMessage = signal<string | null>(null);
+  protected readonly importError = signal<string | null>(null);
+  protected readonly selectedCsvFile = signal<File | null>(null);
+  protected readonly csvImportErrors = signal<Array<{ row: number; data: Record<string, string>; errors: string[] }>>([]);
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
@@ -72,13 +79,27 @@ export class EmployeeListComponent {
     companyId: [''],
   });
 
+  protected readonly csvForm = this.fb.group({
+    companyId: ['', [Validators.required]],
+  });
+
   constructor(
     private employeeService: EmployeeService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private companySwitcher: CompanySwitcherService
   ) {
     this.loadCompanies();
     this.loadEmployees(1);
     this.loadPayrollSummary();
+
+    // Watch for company changes and update filter
+    effect(() => {
+      const currentCompanyId = this.companySwitcher.currentCompanyId();
+      if (currentCompanyId) {
+        this.form.patchValue({ companyId: currentCompanyId }, { emitEvent: false });
+        this.loadEmployees(1);
+      }
+    });
 
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
@@ -223,12 +244,107 @@ export class EmployeeListComponent {
       next: (result) => {
         this.saving.set(false);
         this.payrollResult.set(result);
-        this.loadPayrollSummary(); // Refresh summary after generation
+        this.loadPayrollSummary(month, companyId); // Refresh summary after generation
       },
       error: (err) => {
         this.saving.set(false);
         const message = err?.error?.message || 'Impossible de generer la paie.';
         this.formError.set(message);
+      },
+    });
+  }
+
+  onCsvFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    this.selectedCsvFile.set(file);
+  }
+
+  importEmployeesCsv(): void {
+    this.importMessage.set(null);
+    this.importError.set(null);
+    this.csvImportErrors.set([]);
+
+    if (this.csvForm.invalid || !this.selectedCsvFile()) {
+      this.importError.set('Selectionnez une societe et un fichier CSV.');
+      return;
+    }
+
+    const companyId = this.csvForm.value.companyId || '';
+    const file = this.selectedCsvFile();
+
+    if (!file) {
+      this.importError.set('Fichier CSV manquant.');
+      return;
+    }
+
+    this.importing.set(true);
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const csv = String(reader.result || '');
+      this.employeeService.importEmployeesCsv({ companyId, csv }).subscribe({
+        next: (result) => {
+          this.importing.set(false);
+          
+          let message = `${result.created} employe(s) importes`;
+          if (result.skipped > 0) {
+            message += `, ${result.skipped} ignores`;
+          }
+          message += ` sur ${result.totalRows} lignes.`;
+          
+          this.importMessage.set(message);
+          
+          if (result.errors && result.errors.length > 0) {
+            this.csvImportErrors.set(result.errors);
+            this.importError.set(`${result.errors.length} erreur(s) detectee(s). Voir les details ci-dessous.`);
+          }
+          
+          if (result.created > 0) {
+            this.selectedCsvFile.set(null);
+            this.loadEmployees(this.page());
+          }
+        },
+        error: (err) => {
+          this.importing.set(false);
+          const message = err?.error?.message || 'Import CSV impossible.';
+          this.importError.set(message);
+        },
+      });
+    };
+
+    reader.onerror = () => {
+      this.importing.set(false);
+      this.importError.set('Lecture du fichier impossible.');
+    };
+
+    reader.readAsText(file);
+  }
+
+  exportEmployeesCsv(): void {
+    this.importMessage.set(null);
+    this.importError.set(null);
+
+    if (this.csvForm.invalid) {
+      this.csvForm.markAllAsTouched();
+      this.importError.set('Selectionnez une societe pour exporter.');
+      return;
+    }
+
+    const companyId = this.csvForm.value.companyId || '';
+    this.employeeService.exportEmployeesCsv(companyId).subscribe({
+      next: (csv) => {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `employees-${companyId}.csv`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        const message = err?.error?.message || 'Export CSV impossible.';
+        this.importError.set(message);
       },
     });
   }
@@ -274,12 +390,13 @@ export class EmployeeListComponent {
     });
   }
 
-  loadPayrollSummary(): void {
+  loadPayrollSummary(month?: string, companyId?: string): void {
     const now = new Date();
-    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    this.summaryMonth.set(month);
+    const resolvedMonth = month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    this.summaryMonth.set(resolvedMonth);
+    this.summaryCompanyId.set(companyId);
 
-    this.employeeService.getPayrollSummary({ month }).subscribe({
+    this.employeeService.getPayrollSummary({ month: resolvedMonth, companyId }).subscribe({
       next: (summary) => this.payrollSummary.set(summary),
       error: () => this.payrollSummary.set(null),
     });
@@ -287,7 +404,10 @@ export class EmployeeListComponent {
 
   refreshSummary(): void {
     if (this.summaryMonth()) {
-      this.employeeService.getPayrollSummary({ month: this.summaryMonth() }).subscribe({
+      this.employeeService.getPayrollSummary({
+        month: this.summaryMonth(),
+        companyId: this.summaryCompanyId(),
+      }).subscribe({
         next: (summary) => this.payrollSummary.set(summary),
         error: () => this.payrollSummary.set(null),
       });

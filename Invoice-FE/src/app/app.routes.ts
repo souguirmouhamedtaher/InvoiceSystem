@@ -126,6 +126,18 @@ export const routes: Routes = [
 			import('./employees').then((m) => m.EmployeeListComponent),
 	},
 	{
+		path: 'admin/company-memberships',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./admin/company-memberships.component').then((m) => m.CompanyMembershipsComponent),
+	},
+	{
+		path: 'admin/audit-logs',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./admin/audit-logs.component').then((m) => m.AuditLogsComponent),
+	},
+	{
 		path: 'employees/new',
 		redirectTo: 'employees',
 	},

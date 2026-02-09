@@ -16,6 +16,7 @@ import { InvoiceUseCases } from '../../application/useCases';
 import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../../application/dtos';
 import { Invoice } from '../../domain/entities';
 import { AccessTokenGuard } from '../guards/accessToken.guard';
+import { UserDecorator } from '../decorators/getUser.decorator';
 import { Response } from 'express';
 
 @ApiTags('Facturation|Invoice')
@@ -30,8 +31,8 @@ export class InvoiceController {
         summary: 'Calculate invoice totals without creating',
         description: 'Calculates totals, taxes, and final amounts based on provided libelles and settings. Does not save to database.'
     })
-    async calculateInvoice(@Body() createInvoiceDto: CreateInvoiceDto) {
-        return this.invoiceUseCases.calculateInvoice(createInvoiceDto);
+    async calculateInvoice(@UserDecorator() user, @Body() createInvoiceDto: CreateInvoiceDto) {
+        return this.invoiceUseCases.calculateInvoice(user, createInvoiceDto);
     }
 
     @Post()
@@ -40,8 +41,8 @@ export class InvoiceController {
         summary: 'Create a new invoice with automatic calculations',
         description: 'Automatically generates invoice number (YYYY-NNNN format), calculates totals from libelles. Libelle IDs must be provided.'
     })
-    async createInvoice(@Body() createInvoiceDto: CreateInvoiceDto): Promise<Invoice> {
-        return this.invoiceUseCases.createInvoice(createInvoiceDto);
+    async createInvoice(@UserDecorator() user, @Body() createInvoiceDto: CreateInvoiceDto): Promise<Invoice> {
+        return this.invoiceUseCases.createInvoice(user, createInvoiceDto);
     }
 
     @Get()
@@ -54,24 +55,26 @@ export class InvoiceController {
     @ApiQuery({ name: 'invoiceStatus', required: false, type: String, description: 'Filter by invoice status' })
     @ApiQuery({ name: 'dateFrom', required: false, type: String, description: 'Filter by start date (YYYY-MM-DD)' })
     @ApiQuery({ name: 'dateTo', required: false, type: String, description: 'Filter by end date (YYYY-MM-DD)' })
-    async getAllInvoices(@Query() query): Promise<{ invoices: Invoice[]; totalInvoices: number }> {
+    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by mycompanyId' })
+    async getAllInvoices(@UserDecorator() user, @Query() query): Promise<{ invoices: Invoice[]; totalInvoices: number }> {
         const page = parseInt(query.page, 10) || 1;
         const limit = parseInt(query.limit, 10) || 20;
 
         const { page: _, limit: __, ...search } = query;
 
-        return await this.invoiceUseCases.getAllInvoices(page, limit, search);
+        return await this.invoiceUseCases.getAllInvoices(user, page, limit, search);
     }
 
     @Get('stats')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get invoice statistics (total count, total amount, count by status)' })
-    async getInvoiceStats(): Promise<{
+    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by mycompanyId' })
+    async getInvoiceStats(@UserDecorator() user, @Query('companyId') companyId?: string): Promise<{
         totalInvoices: number;
         totalAmount: number;
         byStatus: { [key: string]: number };
     }> {
-        return this.invoiceUseCases.getInvoiceStats();
+        return this.invoiceUseCases.getInvoiceStats(user, companyId);
     }
 
     @Get('date-range')
@@ -79,25 +82,28 @@ export class InvoiceController {
     @ApiOperation({ summary: 'Get invoices by date range' })
     @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (YYYY-MM-DD)' })
     @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (YYYY-MM-DD)' })
+    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by mycompanyId' })
     async getInvoicesByDateRange(
+        @UserDecorator() user,
         @Query('startDate') startDate: string,
-        @Query('endDate') endDate: string
+        @Query('endDate') endDate: string,
+        @Query('companyId') companyId?: string
     ): Promise<Invoice[]> {
-        return this.invoiceUseCases.getInvoicesByDateRange(startDate, endDate);
+        return this.invoiceUseCases.getInvoicesByDateRange(user, startDate, endDate, companyId);
     }
 
     @Get(':id')
     @ApiBearerAuth()
-    async getInvoiceById(@Param('id') id: string): Promise<Invoice> {
-        return this.invoiceUseCases.getInvoiceById(id);
+    async getInvoiceById(@UserDecorator() user, @Param('id') id: string): Promise<Invoice> {
+        return this.invoiceUseCases.getInvoiceById(user, id);
     }
 
     @Get(':id/pdf')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Download invoice PDF' })
-    async downloadInvoicePdf(@Param('id') id: string, @Res() res: Response) {
+    async downloadInvoicePdf(@UserDecorator() user, @Param('id') id: string, @Res() res: Response) {
         try {
-            const buffer = await this.invoiceUseCases.generateInvoicePdf(id);
+            const buffer = await this.invoiceUseCases.generateInvoicePdf(user, id);
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `inline; filename="facture-${id}.pdf"`);
             res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -110,6 +116,24 @@ export class InvoiceController {
         }
     }
 
+    @Get(':id/xml')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Download invoice XML (Tunisian Elfatoora format)' })
+    async downloadInvoiceXml(@UserDecorator() user, @Param('id') id: string, @Res() res: Response) {
+        try {
+            const xml = await this.invoiceUseCases.generateInvoiceXml(user, id);
+            res.setHeader('Content-Type', 'application/xml');
+            res.setHeader('Content-Disposition', `attachment; filename="facture-${id}.xml"`);
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.send(xml);
+        } catch (error) {
+            console.error('Invoice XML error:', error);
+            throw new InternalServerErrorException('Impossible de generer le XML.');
+        }
+    }
+
     @Patch(':id')
     @ApiBearerAuth()
     @ApiOperation({
@@ -117,16 +141,17 @@ export class InvoiceController {
         description: 'If libelles are updated, totals will be automatically recalculated.'
     })
     async updateInvoice(
+        @UserDecorator() user,
         @Param('id') id: string,
         @Body() updateInvoiceDto: UpdateInvoiceDto
     ): Promise<Invoice> {
-        return this.invoiceUseCases.updateInvoice(id, updateInvoiceDto);
+        return this.invoiceUseCases.updateInvoice(user, id, updateInvoiceDto);
     }
 
     @Delete(':id')
     @ApiBearerAuth()
-    async deleteInvoice(@Param('id') id: string): Promise<{ success: boolean }> {
-        const result = await this.invoiceUseCases.deleteInvoice(id);
+    async deleteInvoice(@UserDecorator() user, @Param('id') id: string): Promise<{ success: boolean }> {
+        const result = await this.invoiceUseCases.deleteInvoice(user, id);
         return { success: result };
     }
 
@@ -134,9 +159,10 @@ export class InvoiceController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Add a payment to an invoice' })
     async addInvoicePayment(
+        @UserDecorator() user,
         @Param('id') id: string,
         @Body() payload: AddInvoicePaymentDto
     ): Promise<Invoice> {
-        return this.invoiceUseCases.addInvoicePayment(id, payload);
+        return this.invoiceUseCases.addInvoicePayment(user, id, payload);
     }
 }

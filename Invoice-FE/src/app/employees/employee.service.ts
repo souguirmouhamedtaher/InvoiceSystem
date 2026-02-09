@@ -120,4 +120,28 @@ export class EmployeeService {
       }>>(`${environment.apiBaseUrl}/employee/payroll/summary`, { params: query })
       .pipe(map((response) => response.data));
   }
+
+  importEmployeesCsv(payload: { companyId: string; csv: string }): Observable<{ 
+    created: number; 
+    skipped: number; 
+    errors: Array<{ row: number; data: Record<string, string>; errors: string[] }>; 
+    totalRows: number 
+  }> {
+    return this.http
+      .post<ApiResponse<{ 
+        created: number; 
+        skipped: number; 
+        errors: Array<{ row: number; data: Record<string, string>; errors: string[] }>; 
+        totalRows: number 
+      }>>(`${environment.apiBaseUrl}/employee/import-csv`, payload)
+      .pipe(map((response) => response.data));
+  }
+
+  exportEmployeesCsv(companyId: string): Observable<string> {
+    const params = new HttpParams().set('companyId', companyId);
+    return this.http.get(`${environment.apiBaseUrl}/employee/export-csv`, {
+      params,
+      responseType: 'text',
+    });
+  }
 }

@@ -28,6 +28,7 @@ export class ClientService {
     companyType?: string;
     city?: string;
     country?: string;
+    companyId?: string;
   }): Observable<ClientListResponse> {
     const query = new HttpParams({
       fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {

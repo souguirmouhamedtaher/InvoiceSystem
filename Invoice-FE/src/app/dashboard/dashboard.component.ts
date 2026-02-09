@@ -1,72 +1,62 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DashboardService } from './dashboard.service';
-import { CashDashboardResponse } from './dashboard.model';
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './dashboard.component.html',
+  imports: [CommonModule, RouterLink],
+  template: `
+    <section class="dashboard">
+      <header class="page-header">
+        <div>
+          <h1>Tableau de bord</h1>
+          <p class="subtitle">Bienvenue dans votre espace de gestion</p>
+        </div>
+      </header>
+
+      <div class="summary-grid">
+        <article class="summary-card">
+          <p>Factures</p>
+          <h3>-</h3>
+          <span>Gestion des factures clients et fournisseurs</span>
+        </article>
+        <article class="summary-card">
+          <p>Clients</p>
+          <h3>-</h3>
+          <span>Base de donnees clients</span>
+        </article>
+        <article class="summary-card">
+          <p>Employes</p>
+          <h3>-</h3>
+          <span>Gestion des ressources humaines</span>
+        </article>
+        <article class="summary-card">
+          <p>TVA</p>
+          <h3>-</h3>
+          <span>Declarations et paiements</span>
+        </article>
+      </div>
+
+      <div class="info-section">
+        <h2>Acces rapide</h2>
+        <div class="quick-links">
+          <a routerLink="/invoices/new" class="quick-link">
+            <h3>Nouvelle facture</h3>
+            <p>Creer une facture de vente</p>
+          </a>
+          <a routerLink="/clients/new" class="quick-link">
+            <h3>Nouveau client</h3>
+            <p>Ajouter un client</p>
+          </a>
+          <a routerLink="/employees" class="quick-link">
+            <h3>Employes</h3>
+            <p>Consulter la liste</p>
+          </a>
+        </div>
+      </div>
+    </section>
+  `,
   styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent {
-  protected readonly data = signal<CashDashboardResponse | null>(null);
-  protected readonly loading = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
-
-  private fb = inject(FormBuilder);
-  private destroyRef = inject(DestroyRef);
-
-  protected readonly form = this.fb.group({
-    year: [''],
-    month: [''],
-  });
-
-  protected readonly maxMagnitude = computed(() => {
-    const entries = this.data()?.monthlyBreakdown ?? [];
-    if (!entries.length) return 1;
-    const maxValue = Math.max(...entries.map((entry) => Math.abs(entry.cashBalance)));
-    return maxValue > 0 ? maxValue : 1;
-  });
-
-  constructor(private dashboardService: DashboardService) {
-    this.loadData();
-
-    this.form.valueChanges
-      .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.loadData());
-  }
-
-  resetFilters(): void {
-    this.form.reset({ year: '', month: '' });
-  }
-
-  getBarWidth(value: number): number {
-    const maxValue = this.maxMagnitude();
-    return Math.min(100, (Math.abs(value) / maxValue) * 100);
-  }
-
-  private loadData(): void {
-    const year = this.form.value.year ? Number(this.form.value.year) : undefined;
-    const month = this.form.value.month ? Number(this.form.value.month) : undefined;
-
-    this.loading.set(true);
-    this.errorMessage.set(null);
-
-    this.dashboardService.getCashDashboard(year, month).subscribe({
-      next: (response) => {
-        this.data.set(response);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.loading.set(false);
-        const message = err?.error?.message || 'Impossible de charger le dashboard.';
-        this.errorMessage.set(message);
-      },
-    });
-  }
-}
+export class DashboardComponent {}

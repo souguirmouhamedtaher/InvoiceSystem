@@ -11,6 +11,8 @@ export * from "./employee.entity"
 export * from "./salary.entity"
 export * from "./cnssPayment.entity"
 export * from "./tvaPayment.entity"
+export * from "./companyMembership.entity"
+export * from "./auditLog.entity"
 
 
 

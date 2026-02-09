@@ -3,7 +3,13 @@ import { IDataServices } from 'src/domain/abstracts';
 import { Company } from 'src/domain/entities';
 import { CreateCompanyDto, UpdateCompanyDto } from '../dtos';
 import { CompanyFactory } from '../factoryMapper';
+import { Role } from 'src/domain/enums/role.enums';
 import { Types } from 'mongoose';
+
+type RequestUser = {
+  _id: string | Types.ObjectId;
+  roles?: string[];
+};
 
 @Injectable()
 export class CompanyUseCases {
@@ -13,12 +19,35 @@ export class CompanyUseCases {
   ) {}
 
   async getAllCompanies(
-    userId: string | Types.ObjectId,
+    user: RequestUser,
     page: number = 1,
     limit: number = 20,
     search?: { [key: string]: any }
   ): Promise<{ companies: Company[]; totalCompanies: number }> {
-    const query: any = { deletedAt: null, userId: new Types.ObjectId(userId) };
+    const query: any = { deletedAt: null };
+    
+    if (!this.isAdmin(user.roles)) {
+      // Get companies user owns or is a member of
+      const memberships = await this.dataService.companyMembership.findAllByAttributeWithFilter(
+        {
+          $or: [
+            { deletedAt: null },
+            { deletedAt: { $exists: false } }
+          ],
+          userId: new Types.ObjectId(user._id)
+        },
+        1,
+        1000 // Get all memberships
+      );
+
+      const memberOfCompanyIds = memberships?.map(m => m.companyId) || [];
+      const ownedAndMemberIds = [new Types.ObjectId(user._id), ...memberOfCompanyIds];
+
+      query.$or = [
+        { userId: { $in: ownedAndMemberIds } }
+      ];
+    }
+
     const orQueries: any[] = [];
 
     if (search) {
@@ -48,10 +77,19 @@ export class CompanyUseCases {
     return { companies, totalCompanies };
   }
 
-  async getCompanyById(userId: string | Types.ObjectId, id: string): Promise<Company> {
+  private isAdmin(roles?: string[]): boolean {
+    return Boolean(
+      roles?.some((role) => {
+        const lowered = role.toLowerCase();
+        return lowered === Role.SUPERADMIN || lowered === 'superadmin';
+      })
+    );
+  }
+
+  async getCompanyById(user: RequestUser, id: string): Promise<Company> {
     const company = await this.dataService.company.get(id);
     if (!company) throw new NotFoundException('Company not found.');
-    if (company.userId.toString() !== userId.toString()) {
+    if (!this.isAdmin(user.roles) && company.userId.toString() !== user._id.toString()) {
       throw new ForbiddenException('Access denied');
     }
     return company;
@@ -84,10 +122,10 @@ export class CompanyUseCases {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  async updateCompany(userId: string | Types.ObjectId, id: string, companyToUpdate: UpdateCompanyDto): Promise<Company> {
+  async updateCompany(user: RequestUser, id: string, companyToUpdate: UpdateCompanyDto): Promise<Company> {
     const existingCompany = await this.dataService.company.get(id);
     if (!existingCompany) throw new NotFoundException('Company not found.');
-    if (existingCompany.userId.toString() !== userId.toString()) {
+    if (!this.isAdmin(user.roles) && existingCompany.userId.toString() !== user._id.toString()) {
       throw new ForbiddenException('Access denied');
     }
 
@@ -120,10 +158,10 @@ export class CompanyUseCases {
     return await this.dataService.company.update(id, company);
   }
 
-  async deleteCompany(userId: string | Types.ObjectId, id: string): Promise<boolean> {
+  async deleteCompany(user: RequestUser, id: string): Promise<boolean> {
     const company = await this.dataService.company.get(id);
     if (!company) throw new NotFoundException('Company not found.');
-    if (company.userId.toString() !== userId.toString()) {
+    if (!this.isAdmin(user.roles) && company.userId.toString() !== user._id.toString()) {
       throw new ForbiddenException('Access denied');
     }
     if (!company) throw new NotFoundException('Company not found.');

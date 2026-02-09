@@ -20,6 +20,8 @@ export class InvoiceDetailComponent {
   protected readonly savingPayment = signal(false);
   protected readonly pdfError = signal<string | null>(null);
   protected readonly downloadingPdf = signal(false);
+  protected readonly xmlError = signal<string | null>(null);
+  protected readonly downloadingXml = signal(false);
 
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -125,6 +127,34 @@ export class InvoiceDetailComponent {
         this.downloadingPdf.set(false);
         const message = err?.error?.message || 'Impossible de telecharger le PDF.';
         this.pdfError.set(message);
+      },
+    });
+  }
+
+  downloadXml(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.xmlError.set('Facture introuvable.');
+      return;
+    }
+
+    this.xmlError.set(null);
+    this.downloadingXml.set(true);
+
+    this.invoiceService.downloadInvoiceXml(id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `facture-${id}.xml`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.downloadingXml.set(false);
+      },
+      error: (err) => {
+        this.downloadingXml.set(false);
+        const message = err?.error?.message || 'Impossible de telecharger le XML.';
+        this.xmlError.set(message);
       },
     });
   }
