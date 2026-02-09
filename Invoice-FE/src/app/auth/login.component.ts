@@ -44,7 +44,7 @@ export class LoginComponent {
     this.authService.login(payload).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/clients/new']);
+        this.router.navigate(['/company-selector']);
       },
       error: (err) => {
         this.loading.set(false);

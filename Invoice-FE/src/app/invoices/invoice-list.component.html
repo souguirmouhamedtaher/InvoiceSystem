@@ -16,15 +16,6 @@
 
   <form class="filters" [formGroup]="form">
     <label class="field">
-      <span>Societe</span>
-      <select (change)="selectCompany($event.target.value)" [value]="companySwitcher.currentCompanyId()">
-        <option *ngFor="let m of availableMemberships()" [value]="m.companyId._id">
-          {{ m.companyId.companyname }} ({{ m.role }})
-        </option>
-      </select>
-    </label>
-
-    <label class="field">
       <span>Recherche</span>
       <input type="text" formControlName="search" placeholder="Numero, client, application" />
     </label>

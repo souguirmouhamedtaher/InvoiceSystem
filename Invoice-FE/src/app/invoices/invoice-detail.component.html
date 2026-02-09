@@ -119,16 +119,15 @@
     </form>
   </section>
 
-  <div class="action-buttons">
-    <a class="ghost" routerLink="/invoices/new">Nouvelle facture</a>
-    <button class="primary" type="button" (click)="downloadPdf()" [disabled]="downloadingPdf()">
-      {{ downloadingPdf() ? 'Telechargement...' : 'Exporter PDF' }}
-    </button>
-    <button class="primary" type="button" (click)="downloadXml()" [disabled]="downloadingXml()">
-      {{ downloadingXml() ? 'Telechargement...' : 'Exporter XML' }}
-    </button>
-  </div>
+  <a class="ghost" routerLink="/invoices/new">Nouvelle facture</a>
+  <button class="primary" type="button" (click)="downloadPdf()" [disabled]="downloadingPdf()">
+    {{ downloadingPdf() ? 'Telechargement...' : 'Exporter PDF' }}
+  </button>
   <div class="error" *ngIf="pdfError()">{{ pdfError() }}</div>
+  
+  <button class="secondary" type="button" (click)="downloadXml()" [disabled]="downloadingXml()">
+    {{ downloadingXml() ? 'Telechargement...' : 'Exporter XML (Elfatoora)' }}
+  </button>
   <div class="error" *ngIf="xmlError()">{{ xmlError() }}</div>
 </section>
 

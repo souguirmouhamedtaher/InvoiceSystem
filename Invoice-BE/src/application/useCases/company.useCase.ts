@@ -25,29 +25,9 @@ export class CompanyUseCases {
     search?: { [key: string]: any }
   ): Promise<{ companies: Company[]; totalCompanies: number }> {
     const query: any = { deletedAt: null };
-    
     if (!this.isAdmin(user.roles)) {
-      // Get companies user owns or is a member of
-      const memberships = await this.dataService.companyMembership.findAllByAttributeWithFilter(
-        {
-          $or: [
-            { deletedAt: null },
-            { deletedAt: { $exists: false } }
-          ],
-          userId: new Types.ObjectId(user._id)
-        },
-        1,
-        1000 // Get all memberships
-      );
-
-      const memberOfCompanyIds = memberships?.map(m => m.companyId) || [];
-      const ownedAndMemberIds = [new Types.ObjectId(user._id), ...memberOfCompanyIds];
-
-      query.$or = [
-        { userId: { $in: ownedAndMemberIds } }
-      ];
+      query.userId = new Types.ObjectId(user._id);
     }
-
     const orQueries: any[] = [];
 
     if (search) {

@@ -118,16 +118,16 @@ export class InvoiceController {
 
     @Get(':id/xml')
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Download invoice XML (Tunisian Elfatoora format)' })
+    @ApiOperation({ summary: 'Download invoice XML (Tunisian Elfatoora TEIF v1.8.8 format)' })
     async downloadInvoiceXml(@UserDecorator() user, @Param('id') id: string, @Res() res: Response) {
         try {
-            const xml = await this.invoiceUseCases.generateInvoiceXml(user, id);
+            const buffer = await this.invoiceUseCases.generateInvoiceXml(user, id);
             res.setHeader('Content-Type', 'application/xml');
             res.setHeader('Content-Disposition', `attachment; filename="facture-${id}.xml"`);
             res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
-            res.send(xml);
+            res.end(buffer);
         } catch (error) {
             console.error('Invoice XML error:', error);
             throw new InternalServerErrorException('Impossible de generer le XML.');

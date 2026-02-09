@@ -6,10 +6,10 @@ import { invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
 import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
 import { InvoiceFactory } from '../factoryMapper';
 import { buildInvoicePdfBuffer, InvoicePdfTotals, VatSummaryRow } from '../utils/invoice-pdf';
+import { XmlGeneratorUseCases } from './xmlGenerator.useCase';
 import { Types } from 'mongoose';
 import { CompanyRole } from 'src/domain/enums/companyRole.enums';
 import { Role } from 'src/domain/enums/role.enums';
-import { XmlGeneratorService } from '../services/xml-generator.service';
 
 type RequestUser = {
   _id: string;
@@ -21,7 +21,7 @@ export class InvoiceUseCases {
   constructor(
     private dataService: IDataServices,
     private invoiceFactory: InvoiceFactory,
-    private xmlGeneratorService: XmlGeneratorService
+    private xmlGeneratorUseCases: XmlGeneratorUseCases
   ) { }
 
   async getAllInvoices(
@@ -459,12 +459,10 @@ export class InvoiceUseCases {
     });
   }
 
-  async generateInvoiceXml(user: RequestUser, id: string): Promise<string> {
-    // Fetch invoice with populated references
+  async generateInvoiceXml(user: RequestUser, id: string): Promise<Buffer> {
     const invoice = await this.dataService.invoice.get(id);
     if (!invoice) throw new NotFoundException('Invoice not found.');
 
-    // Check permissions
     if (!this.isAdmin(user.roles)) {
       const companyId = invoice.mycompanyId?.toString();
       if (!companyId) {
@@ -473,22 +471,7 @@ export class InvoiceUseCases {
       await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
     }
 
-    // Get company and client details
-    const company = invoice.mycompanyId;
-    const client = invoice.invoiceType === invoiceType.buying
-      ? invoice.supplierId
-      : invoice.clientId;
-
-    if (!company) {
-      throw new BadRequestException('Invoice company information is missing.');
-    }
-
-    if (!client) {
-      throw new BadRequestException('Invoice client/supplier information is missing.');
-    }
-
-    // Generate XML using XmlGeneratorService
-    return this.xmlGeneratorService.generateInvoiceXml(invoice, company, client);
+    return this.xmlGeneratorUseCases.generateInvoiceXml(invoice);
   }
 
   private isAdmin(roles?: string[]): boolean {

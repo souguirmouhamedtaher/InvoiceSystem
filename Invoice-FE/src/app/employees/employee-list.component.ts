@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal, computed, effect } from '@angular/core';
+import { Component, DestroyRef, inject, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -56,6 +56,7 @@ export class EmployeeListComponent {
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     search: [''],
@@ -85,25 +86,27 @@ export class EmployeeListComponent {
 
   constructor(
     private employeeService: EmployeeService,
-    private clientService: ClientService,
-    private companySwitcher: CompanySwitcherService
+    private clientService: ClientService
   ) {
     this.loadCompanies();
     this.loadEmployees(1);
     this.loadPayrollSummary();
 
-    // Watch for company changes and update filter
-    effect(() => {
-      const currentCompanyId = this.companySwitcher.currentCompanyId();
-      if (currentCompanyId) {
-        this.form.patchValue({ companyId: currentCompanyId }, { emitEvent: false });
-        this.loadEmployees(1);
-      }
-    });
-
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadEmployees(1));
+
+    // Reload when company changes
+    effect(() => {
+      const companyId = this.companySwitcher.currentCompanyId();
+      if (companyId) {
+        this.employeeForm.patchValue({ companyId });
+        this.payrollForm.patchValue({ companyId });
+        this.csvForm.patchValue({ companyId });
+        this.loadEmployees(1);
+        this.loadPayrollSummary(undefined, companyId);
+      }
+    });
   }
 
   get totalPages(): number {
@@ -361,7 +364,7 @@ export class EmployeeListComponent {
     this.errorMessage.set(null);
 
     const search = (this.form.value.search || '').trim();
-    const companyId = this.form.value.companyId || undefined;
+    const companyId = this.companySwitcher.currentCompanyId() || this.form.value.companyId || undefined;
 
     this.employeeService.getEmployees({ page, limit: this.limit, search, companyId }).subscribe({
       next: (response: EmployeeListResponse) => {
@@ -393,10 +396,11 @@ export class EmployeeListComponent {
   loadPayrollSummary(month?: string, companyId?: string): void {
     const now = new Date();
     const resolvedMonth = month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const resolvedCompanyId = companyId || this.companySwitcher.currentCompanyId() || undefined;
     this.summaryMonth.set(resolvedMonth);
-    this.summaryCompanyId.set(companyId);
+    this.summaryCompanyId.set(resolvedCompanyId);
 
-    this.employeeService.getPayrollSummary({ month: resolvedMonth, companyId }).subscribe({
+    this.employeeService.getPayrollSummary({ month: resolvedMonth, companyId: resolvedCompanyId }).subscribe({
       next: (summary) => this.payrollSummary.set(summary),
       error: () => this.payrollSummary.set(null),
     });
@@ -404,9 +408,10 @@ export class EmployeeListComponent {
 
   refreshSummary(): void {
     if (this.summaryMonth()) {
+      const resolvedCompanyId = this.summaryCompanyId() || this.companySwitcher.currentCompanyId() || undefined;
       this.employeeService.getPayrollSummary({
         month: this.summaryMonth(),
-        companyId: this.summaryCompanyId(),
+        companyId: resolvedCompanyId,
       }).subscribe({
         next: (summary) => this.payrollSummary.set(summary),
         error: () => this.payrollSummary.set(null),

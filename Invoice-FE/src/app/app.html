@@ -1,67 +1,98 @@
-<div class="app-shell">
+<div class="app-shell" [class.has-sidebar]="auth.isLoggedIn() && !isAuthRoute()">
   <aside class="sidebar" *ngIf="auth.isLoggedIn() && !isAuthRoute()">
-    <div class="brand">
-      <span class="brand-mark">Invoice</span>
-      <span class="brand-sub">Studio</span>
+    <div class="sidebar-header">
+      <div class="brand">
+        <span class="brand-icon">📋</span>
+        <div class="brand-text">
+          <span class="brand-mark">Invoice</span>
+          <span class="brand-sub">Studio</span>
+        </div>
+      </div>
     </div>
 
-    <app-company-switcher></app-company-switcher>
+    <div class="company-selector-compact">
+      <app-company-switcher></app-company-switcher>
+    </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-group">
-        <p class="nav-title">Caisse</p>
-        <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <!-- Invoices Section -->
+      <div class="nav-section">
+        <a class="nav-item nav-primary" routerLink="/invoices" routerLinkActive="active">
+          <span class="nav-icon">📄</span>
+          <span class="nav-label">Invoices</span>
+        </a>
+        <a class="nav-item nav-secondary" routerLink="/invoices/new" routerLinkActive="active">
+          <span class="nav-icon">➕</span>
+          <span class="nav-label">New Invoice</span>
+        </a>
+        <a class="nav-item nav-secondary" routerLink="/invoices/buying" routerLinkActive="active">
+          <span class="nav-icon">📥</span>
+          <span class="nav-label">Purchase Invoices</span>
+        </a>
       </div>
 
-      <div class="nav-group">
-        <p class="nav-title">Ventes</p>
-        <a class="nav-link" routerLink="/clients" routerLinkActive="active">Clients</a>
-        <a class="nav-link" routerLink="/clients/new" routerLinkActive="active">Nouveau client</a>
+      <!-- Contacts Section -->
+      <div class="nav-section">
+        <a class="nav-item nav-primary" routerLink="/clients" routerLinkActive="active">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">Customers</span>
+        </a>
+        <a class="nav-item nav-secondary" routerLink="/clients/new" routerLinkActive="active">
+          <span class="nav-icon">➕</span>
+          <span class="nav-label">New Customer</span>
+        </a>
+        <a class="nav-item nav-primary" routerLink="/suppliers" routerLinkActive="active">
+          <span class="nav-icon">🏢</span>
+          <span class="nav-label">Suppliers</span>
+        </a>
+        <a class="nav-item nav-secondary" routerLink="/suppliers/new" routerLinkActive="active">
+          <span class="nav-icon">➕</span>
+          <span class="nav-label">New Supplier</span>
+        </a>
       </div>
 
-      <div class="nav-group">
-        <p class="nav-title">Achats</p>
-        <a class="nav-link" routerLink="/suppliers" routerLinkActive="active">Fournisseurs</a>
-        <a class="nav-link" routerLink="/suppliers/new" routerLinkActive="active">Nouveau fournisseur</a>
+      <!-- HR Section -->
+      <div class="nav-section">
+        <a class="nav-item nav-primary" routerLink="/employees" routerLinkActive="active">
+          <span class="nav-icon">👨‍💼</span>
+          <span class="nav-label">Employees</span>
+        </a>
       </div>
 
-      <div class="nav-group">
-        <p class="nav-title">Facturation</p>
-        <a class="nav-link" routerLink="/invoices" routerLinkActive="active">Factures</a>
-        <a class="nav-link" routerLink="/invoices/buying" routerLinkActive="active">Factures d'achat</a>
-        <a class="nav-link" routerLink="/invoices/new" routerLinkActive="active">Nouvelle facture</a>
-        <a class="nav-link" routerLink="/invoices/scan" routerLinkActive="active">Scanner facture</a>
+      <!-- Tax Section -->
+      <div class="nav-section">
+        <a class="nav-item nav-primary" routerLink="/tva-monthly" routerLinkActive="active">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Monthly VAT</span>
+        </a>
+        <a class="nav-item nav-secondary" routerLink="/tva-payments" routerLinkActive="active">
+          <span class="nav-icon">💳</span>
+          <span class="nav-label">VAT Payments</span>
+        </a>
       </div>
 
-      <div class="nav-group">
-        <p class="nav-title">Societe</p>
-        <a class="nav-link" routerLink="/my-companies" routerLinkActive="active">Mes societes</a>
-        <a class="nav-link" routerLink="/tax-settings/new" routerLinkActive="active">Taxe</a>
-      </div>
-
-      <div class="nav-group">
-        <p class="nav-title">TVA</p>
-        <a class="nav-link" routerLink="/tva-monthly" routerLinkActive="active">TVA mensuelle</a>
-        <a class="nav-link" routerLink="/tva-cumulative" routerLinkActive="active">TVA cumulee</a>
-        <a class="nav-link" routerLink="/tva-payments" routerLinkActive="active">Paiements TVA</a>
-        <a class="nav-link" routerLink="/tva-payments/new" routerLinkActive="active">Nouveau paiement TVA</a>
-      </div>
-
-      <div class="nav-group">
-        <p class="nav-title">Paie</p>
-        <a class="nav-link" routerLink="/employees" routerLinkActive="active">Employes</a>
-      </div>
-
-      <div class="nav-group" *ngIf="auth.isSuperAdmin()">
-        <p class="nav-title">Administration</p>
-        <a class="nav-link" routerLink="/admin/company-memberships" routerLinkActive="active">Membres</a>
-        <a class="nav-link" routerLink="/admin/audit-logs" routerLinkActive="active">Journal d'audit</a>
+      <!-- Settings Section -->
+      <div class="nav-section">
+        <a class="nav-item nav-primary" routerLink="/my-companies" routerLinkActive="active">
+          <span class="nav-icon">🏛️</span>
+          <span class="nav-label">My Companies</span>
+        </a>
+        <a class="nav-item nav-primary" routerLink="/admin/company-memberships" routerLinkActive="active">
+          <span class="nav-icon">🔐</span>
+          <span class="nav-label">Team Members</span>
+        </a>
+        <a class="nav-item nav-primary" routerLink="/admin/audit-logs" routerLinkActive="active">
+          <span class="nav-icon">📜</span>
+          <span class="nav-label">Audit Log</span>
+        </a>
       </div>
     </nav>
 
-    <div class="auth">
-      <span class="status">Connecte</span>
-      <button class="ghost" type="button" (click)="logout()">Se deconnecter</button>
+    <div class="sidebar-footer">
+      <button class="logout-btn" type="button" (click)="logout()">
+        <span class="nav-icon">🚪</span>
+        <span>Logout</span>
+      </button>
     </div>
   </aside>
 

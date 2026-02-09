@@ -7,7 +7,7 @@ import {
 import * as crypto from 'crypto';
 import { IDataServices, IHashService, IMailerService } from "../../domain/abstracts";
 import {  User } from "../../domain/entities";
-import { AssignUserToCompanyDto, CreateSuperAdminDto, UpdateSuperAdminDto } from "../dtos";
+import { CreateCompanyUserDto, CreateSuperAdminDto, UpdateSuperAdminDto } from "../dtos";
 import { UserFactory } from "../factoryMapper";
 import { Role } from "src/domain/enums/role.enums";
 import { companyType } from "src/domain/enums/company.enums";
@@ -56,6 +56,87 @@ export class SuperAdminUseCases {
         superAdminToUpdate: UpdateSuperAdminDto
     ): Promise<User> {
         return this.dataServices.user.update(id, superAdminToUpdate);
+    }
+
+    async createCompanyUser(
+        payload: CreateCompanyUserDto,
+        actorId: string
+    ): Promise<{ user: User; membershipId: string }> {
+        const company = await this.dataServices.company.get(payload.companyId);
+        if (!company) throw new NotFoundException('Company not found.');
+        if (company.companyType !== companyType.mycompany) {
+            throw new BadRequestException('Company must be a mycompany.');
+        }
+
+        const email = payload.email.toLowerCase();
+        let user = await this.dataServices.user.findByAttribute('email', email);
+        let temporaryPassword: string | null = null;
+
+        if (!user || user.deletedAt) {
+            if (!payload.firstName || !payload.lastName) {
+                throw new BadRequestException('First name and last name are required for new users.');
+            }
+            const newUser = new User();
+            newUser.firstName = payload.firstName;
+            newUser.lastName = payload.lastName;
+            newUser.phoneNumber = payload.phone;
+            newUser.email = email;
+            newUser.role = [Role.USER];
+            newUser.createdAt = new Date();
+            newUser.updatedAt = new Date();
+
+            temporaryPassword = crypto.randomBytes(12).toString('base64url');
+            newUser.password = await this.hashServices.hash(temporaryPassword);
+
+            user = await this.dataServices.user.create(newUser);
+        }
+
+        const existingMembership = await this.dataServices.companyMembership.findAllByAttributeWithFilter(
+            { 
+                $or: [
+                    { deletedAt: null },
+                    { deletedAt: { $exists: false } }
+                ],
+                userId: user._id, 
+                companyId: company._id 
+            },
+            1,
+            1
+        );
+
+        if (existingMembership && existingMembership.length > 0) {
+            throw new ConflictException('User is already assigned to this company.');
+        }
+
+        const membership = await this.dataServices.companyMembership.create({
+            userId: user._id,
+            companyId: company._id,
+            role: payload.role,
+            createdBy: actorId,
+        } as any);
+
+        await this.dataServices.auditLog.create({
+            userId: actorId,
+            companyId: company._id,
+            action: 'COMPANY_USER_ASSIGNED',
+            entityType: 'company_membership',
+            entityId: membership._id,
+            metadata: {
+                targetUserId: user._id,
+                role: payload.role,
+                email,
+            },
+        } as any);
+
+        if (temporaryPassword) {
+            this.mailService.onboardingEmailUser({
+                userName: user.firstName,
+                userEmail: user.email,
+                temporaryPassword,
+            });
+        }
+
+        return { user, membershipId: membership._id.toString() };
     }
 
     async getCompanyMemberships(
@@ -122,130 +203,6 @@ export class SuperAdminUseCases {
 
         const total = logs ? logs.length : 0;
         return { logs: logs || [], total };
-    }
-
-    async assignUserToCompany(
-        dto: AssignUserToCompanyDto,
-        actorId: string
-    ): Promise<any> {
-        // Verify user exists
-        const user = await this.dataServices.user.get(dto.userId);
-        if (!user) throw new NotFoundException('User not found.');
-
-        // Verify company exists
-        const company = await this.dataServices.company.get(dto.companyId);
-        if (!company) throw new NotFoundException('Company not found.');
-
-        // Check if membership already exists
-        const existingMembership = await this.dataServices.companyMembership.findAllByAttributeWithFilter(
-            {
-                userId: dto.userId,
-                companyId: dto.companyId,
-                $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }]
-            },
-            1,
-            1
-        );
-
-        if (existingMembership && existingMembership.length > 0) {
-            throw new ConflictException('User is already assigned to this company.');
-        }
-
-        // Create membership
-        const membership = await this.dataServices.companyMembership.create({
-            userId: dto.userId,
-            companyId: dto.companyId,
-            role: dto.role,
-            createdBy: actorId,
-            createdAt: new Date(),
-        } as any);
-
-        // Log the action
-        await this.dataServices.auditLog.create({
-            userId: actorId,
-            companyId: dto.companyId,
-            action: 'COMPANY_USER_ASSIGNED',
-            entityType: 'company_membership',
-            entityId: membership._id,
-            metadata: {
-                targetUserId: dto.userId,
-                role: dto.role,
-            },
-        } as any);
-
-        return membership;
-    }
-
-    async createCompanyUser(
-        payload: { email: string; password: string; firstName: string; lastName: string; phone?: string; companyId: string; role: string },
-        actorId: string
-    ): Promise<any> {
-        // Check if user already exists
-        const existingUser = await this.dataServices.user.findByAttribute('email', payload.email);
-        
-        let userId: string;
-        
-        if (existingUser && !existingUser.deletedAt) {
-            // User exists, just assign to company
-            userId = existingUser._id;
-        } else {
-            // Create new user
-            const hashedPassword = await this.hashServices.hash(payload.password);
-            const newUser = await this.dataServices.user.create({
-                email: payload.email,
-                password: hashedPassword,
-                firstName: payload.firstName,
-                lastName: payload.lastName,
-                phone: payload.phone,
-                roles: [Role.USER],
-                createdAt: new Date(),
-            } as any);
-            userId = newUser._id;
-        }
-
-        // Verify company exists
-        const company = await this.dataServices.company.get(payload.companyId);
-        if (!company) throw new NotFoundException('Company not found.');
-
-        // Check if membership already exists
-        const existingMembership = await this.dataServices.companyMembership.findAllByAttributeWithFilter(
-            {
-                userId: userId,
-                companyId: payload.companyId,
-                $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }]
-            },
-            1,
-            1
-        );
-
-        if (existingMembership && existingMembership.length > 0) {
-            throw new ConflictException('User is already assigned to this company.');
-        }
-
-        // Create membership
-        const membership = await this.dataServices.companyMembership.create({
-            userId: userId,
-            companyId: payload.companyId,
-            role: payload.role,
-            createdBy: actorId,
-            createdAt: new Date(),
-        } as any);
-
-        // Log the action
-        await this.dataServices.auditLog.create({
-            userId: actorId,
-            companyId: payload.companyId,
-            action: 'COMPANY_USER_ASSIGNED',
-            entityType: 'company_membership',
-            entityId: membership._id,
-            metadata: {
-                targetUserId: userId,
-                role: payload.role,
-                userCreated: !existingUser,
-            },
-        } as any);
-
-        return membership;
     }
 
 }

@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminService, CompanyMembership, CreateCompanyUserPayload } from './admin.service';
 import { ClientService } from '../clients/client.service';
 import { Client } from '../clients/client.model';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-company-memberships',
@@ -12,14 +13,14 @@ import { Client } from '../clients/client.model';
   template: `
     <div class="dashboard-container">
       <div class="dashboard-header">
-        <h1>Gestion des membres</h1>
+        <h1>Gestion des membres de la societe</h1>
         <button class="btn btn-primary" (click)="showAddForm.set(!showAddForm())">
           {{ showAddForm() ? 'Annuler' : '+ Ajouter membre' }}
         </button>
       </div>
 
       <div class="add-form-card" *ngIf="showAddForm()">
-        <h2>Creer un nouveau membre</h2>
+        <h2>Ajouter un nouveau membre</h2>
         <form [formGroup]="addMemberForm" (ngSubmit)="addMember()">
           <div class="form-grid">
             <div class="form-group">
@@ -36,8 +37,8 @@ import { Client } from '../clients/client.model';
               <label for="role">Role *</label>
               <select id="role" formControlName="role" required>
                 <option value="">Selectionnez un role</option>
-                <option value="manager">Manager</option>
-                <option value="accountant">Comptable</option>
+                <option value="MANAGER">Manager</option>
+                <option value="ACCOUNTANT">Comptable</option>
               </select>
             </div>
 
@@ -47,23 +48,18 @@ import { Client } from '../clients/client.model';
             </div>
 
             <div class="form-group">
-              <label for="password">Mot de passe *</label>
-              <input type="password" id="password" formControlName="password" placeholder="Minimum 6 caracteres" required>
+              <label for="firstName">Prenom</label>
+              <input type="text" id="firstName" formControlName="firstName" placeholder="Prenom (pour nouveaux utilisateurs)">
             </div>
 
             <div class="form-group">
-              <label for="firstName">Prenom *</label>
-              <input type="text" id="firstName" formControlName="firstName" placeholder="Prenom" required>
-            </div>
-
-            <div class="form-group">
-              <label for="lastName">Nom *</label>
-              <input type="text" id="lastName" formControlName="lastName" placeholder="Nom" required>
+              <label for="lastName">Nom</label>
+              <input type="text" id="lastName" formControlName="lastName" placeholder="Nom (pour nouveaux utilisateurs)">
             </div>
 
             <div class="form-group">
               <label for="phone">Telephone</label>
-              <input type="tel" id="phone" formControlName="phone" placeholder="+216...">
+              <input type="tel" id="phone" formControlName="phone" placeholder="+212...">
             </div>
           </div>
 
@@ -95,6 +91,7 @@ import { Client } from '../clients/client.model';
 
       <div class="memberships-card">
         <div class="loading" *ngIf="loading()">Chargement...</div>
+        <div class="alert alert-error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
         
         <table class="data-table" *ngIf="!loading() && memberships().length > 0">
           <thead>
@@ -112,7 +109,7 @@ import { Client } from '../clients/client.model';
               <td>{{ membership.userId.firstName }} {{ membership.userId.lastName }}</td>
               <td>{{ membership.userId.email }}</td>
               <td>{{ membership.companyId.companyname }}</td>
-              <td><span class="badge" [class.badge-manager]="membership.role === 'manager'" [class.badge-accountant]="membership.role === 'accountant'">{{ membership.role }}</span></td>
+              <td><span class="badge" [class.badge-manager]="membership.role === 'MANAGER'" [class.badge-accountant]="membership.role === 'ACCOUNTANT'">{{ membership.role }}</span></td>
               <td>{{ membership.createdAt | date:'short' }}</td>
               <td>
                 <button class="btn btn-danger btn-sm" (click)="deleteMembership(membership._id)">Supprimer</button>
@@ -133,6 +130,7 @@ export class CompanyMembershipsComponent implements OnInit {
   private adminService = inject(AdminService);
   private clientService = inject(ClientService);
   private fb = inject(FormBuilder);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected memberships = signal<CompanyMembership[]>([]);
   protected companies = signal<Client[]>([]);
@@ -144,9 +142,8 @@ export class CompanyMembershipsComponent implements OnInit {
 
   protected addMemberForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-    firstName: ['', Validators.required],
-    lastName: ['', Validators.required],
+    firstName: [''],
+    lastName: [''],
     phone: [''],
     companyId: ['', Validators.required],
     role: ['', Validators.required],
@@ -155,6 +152,15 @@ export class CompanyMembershipsComponent implements OnInit {
   protected filterForm = this.fb.group({
     companyId: [''],
   });
+
+  constructor() {
+    effect(() => {
+      const companyId = this.companySwitcher.currentCompanyId();
+      if (companyId) {
+        this.loadMemberships();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadCompanies();
@@ -168,19 +174,16 @@ export class CompanyMembershipsComponent implements OnInit {
   loadCompanies(): void {
     this.clientService.getClients({ page: 1, limit: 1000, companyType: 'mycompany' }).subscribe({
       next: (response) => {
-        this.companies.set(response?.companies?.filter((c: Client) => c.companyType === 'mycompany') || []);
+        this.companies.set(response.companies.filter((c: Client) => c.companyType === 'mycompany'));
       },
-      error: (err) => {
-        console.error('Failed to load companies:', err);
-        this.companies.set([]);
-      },
+      error: (err) => console.error('Failed to load companies:', err),
     });
   }
 
   loadMemberships(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
-    const companyId = this.filterForm.value.companyId || undefined;
+    const companyId = this.companySwitcher.currentCompanyId() || this.filterForm.value.companyId || undefined;
 
     this.adminService.getCompanyMemberships(companyId).subscribe({
       next: (response) => {
@@ -204,29 +207,21 @@ export class CompanyMembershipsComponent implements OnInit {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    const payload: CreateCompanyUserPayload = {
-      email: this.addMemberForm.value.email!,
-      password: this.addMemberForm.value.password!,
-      firstName: this.addMemberForm.value.firstName!,
-      lastName: this.addMemberForm.value.lastName!,
-      phone: this.addMemberForm.value.phone || undefined,
-      companyId: this.addMemberForm.value.companyId!,
-      role: this.addMemberForm.value.role as 'manager' | 'accountant',
-    };
+    const payload: CreateCompanyUserPayload = this.addMemberForm.value as CreateCompanyUserPayload;
 
-    this.adminService.createCompanyUser(payload).subscribe({
+    this.adminService.addCompanyUser(payload).subscribe({
       next: () => {
-        this.successMessage.set('Membre cree avec succes!');
+        this.successMessage.set('Membre ajoute avec succes!');
+        this.saving.set(false);
         this.addMemberForm.reset();
         this.loadMemberships();
-        this.saving.set(false);
         setTimeout(() => {
           this.showAddForm.set(false);
           this.successMessage.set(null);
         }, 2000);
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || 'Erreur lors de la creation');
+        this.errorMessage.set(err.error?.message || 'Erreur lors de l\'ajout du membre');
         this.saving.set(false);
       },
     });

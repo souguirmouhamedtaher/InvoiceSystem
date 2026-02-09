@@ -52,7 +52,7 @@ export * from './APPlogic/tvaPayment/updateTvaPayment.dto'
 //super admin dtos
 export * from './APPlogic/superAdmin/createSuperAdmin.dto'
 export * from './APPlogic/superAdmin/updateSuperAdmin.dto'
-export * from './APPlogic/superAdmin/assignUserToCompany.dto'
+export * from './APPlogic/superAdmin/createCompanyUser.dto'
 
 // AuthDto
 export * from './auth/forgotPassword.dto'

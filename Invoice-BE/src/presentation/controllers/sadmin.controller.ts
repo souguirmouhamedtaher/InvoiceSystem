@@ -17,7 +17,7 @@ import { AccessTokenGuard } from '../guards/accessToken.guard';
 import { RolesGuard } from '../guards/role.guard';
 import { UserDecorator } from '../decorators/getUser.decorator';
 import { User } from 'src/domain/entities';
-import { AssignUserToCompanyDto, CreateSuperAdminDto, UpdateUserDto } from 'src/application/dtos';
+import { CreateCompanyUserDto, CreateSuperAdminDto, UpdateUserDto } from 'src/application/dtos';
 
 @ApiTags('Super_Admin|sadmin')
 @Controller('sadmin')
@@ -36,6 +36,15 @@ export class SAdminController {
         @UserDecorator() user
     ): Promise<User> {
         return this.superAdminUseCases.createSuperAdmin(createSuperAdminDto);
+    }
+
+    @Post('company-users')
+    @ApiBearerAuth()
+    async addCompanyUser(
+        @Body() payload: CreateCompanyUserDto,
+        @UserDecorator() user
+    ): Promise<{ user: User; membershipId: string }> {
+        return this.superAdminUseCases.createCompanyUser(payload, user._id);
     }
 
     @Get('company-memberships')
@@ -57,24 +66,6 @@ export class SAdminController {
         @UserDecorator() user
     ): Promise<void> {
         return this.superAdminUseCases.deleteCompanyMembership(id, user._id);
-    }
-
-    @Post('company-memberships')
-    @ApiBearerAuth()
-    async assignUserToCompany(
-        @Body() dto: AssignUserToCompanyDto,
-        @UserDecorator() user
-    ): Promise<any> {
-        return this.superAdminUseCases.assignUserToCompany(dto, user._id);
-    }
-
-    @Post('company-users')
-    @ApiBearerAuth()
-    async createCompanyUser(
-        @Body() payload: any,
-        @UserDecorator() user
-    ): Promise<any> {
-        return this.superAdminUseCases.createCompanyUser(payload, user._id);
     }
 
     @Get('audit-logs')

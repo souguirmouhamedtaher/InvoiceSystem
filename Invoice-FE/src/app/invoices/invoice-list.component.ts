@@ -23,11 +23,11 @@ export class InvoiceListComponent {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly currentInvoiceType = signal<'all' | 'selling' | 'buying'>('all');
-  protected readonly availableMemberships = signal<any[]>([]);
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     search: [''],
@@ -38,36 +38,23 @@ export class InvoiceListComponent {
     dateTo: [''],
   });
 
-  constructor(
-    private invoiceService: InvoiceService,
-    protected companySwitcher: CompanySwitcherService
-  ) {
+  constructor(private invoiceService: InvoiceService) {
     this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
       const type = data['invoiceType'] as 'selling' | 'buying' | undefined;
       this.applyInvoiceTypeFilter(type);
     });
 
-    // Watch for company membership changes and update dropdown
-    effect(() => {
-      const memberships = this.companySwitcher.availableMemberships();
-      this.availableMemberships.set(memberships);
-    });
-
-    // Watch for company changes and reload invoices
-    effect(() => {
-      const currentCompanyId = this.companySwitcher.currentCompanyId();
-      if (currentCompanyId) {
-        this.loadInvoices(1);
-      }
-    });
-
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadInvoices(1));
-  }
 
-  selectCompany(companyId: string): void {
-    this.companySwitcher.selectCompany(companyId);
+    // Reload when company changes
+    effect(() => {
+      const companyId = this.companySwitcher.currentCompanyId();
+      if (companyId) {
+        this.loadInvoices(1);
+      }
+    });
   }
 
   get totalPages(): number {
@@ -134,7 +121,11 @@ export class InvoiceListComponent {
     const invoiceStatus = this.form.value.invoiceStatus || 'all';
     const dateFrom = (this.form.value.dateFrom || '').trim();
     const dateTo = (this.form.value.dateTo || '').trim();
-    const currentCompanyId = this.companySwitcher.currentCompanyId();
+    const companyId = this.companySwitcher.currentCompanyId();
+
+    if (companyId) {
+      filters['companyId'] = companyId;
+    }
 
     if (search.length) {
       filters['search'] = search;
@@ -159,10 +150,6 @@ export class InvoiceListComponent {
 
     if (dateTo.length) {
       filters['dateTo'] = dateTo;
-    }
-
-    if (currentCompanyId) {
-      filters['companyId'] = currentCompanyId;
     }
 
     return filters;

@@ -15,7 +15,7 @@ export interface CompanyMembership {
     _id: string;
     companyname: string;
   };
-  role: 'manager' | 'accountant';
+  role: 'MANAGER' | 'ACCOUNTANT';
   createdBy: string;
   createdAt: string;
 }
@@ -31,28 +31,13 @@ export interface AuditLog {
   createdAt: string;
 }
 
-export interface SimpleUser {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  roles: string[];
-}
-
-export interface AssignUserPayload {
-  userId: string;
-  companyId: string;
-  role: 'manager' | 'accountant';
-}
-
 export interface CreateCompanyUserPayload {
   email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
   companyId: string;
-  role: 'manager' | 'accountant';
+  role: 'MANAGER' | 'ACCOUNTANT';
 }
 
 @Injectable({
@@ -78,6 +63,10 @@ export class AdminService {
     return this.http.delete<void>(`${this.apiUrl}/company-memberships/${membershipId}`);
   }
 
+  addCompanyUser(payload: CreateCompanyUserPayload): Observable<{ user: any; membershipId: string }> {
+    return this.http.post<{ user: any; membershipId: string }>(`${this.apiUrl}/company-users`, payload);
+  }
+
   getAuditLogs(filters: { companyId?: string; userId?: string; action?: string; page?: number; limit?: number } = {}): Observable<{ logs: AuditLog[]; total: number }> {
     let params = new HttpParams()
       .set('page', (filters.page || 1).toString())
@@ -88,21 +77,5 @@ export class AdminService {
     if (filters.action) params = params.set('action', filters.action);
 
     return this.http.get<{ logs: AuditLog[]; total: number }>(`${this.apiUrl}/audit-logs`, { params });
-  }
-
-  getAllUsers(page: number = 1, limit: number = 1000): Observable<{ Users: SimpleUser[]; totalUsers: number }> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
-    
-    return this.http.get<{ Users: SimpleUser[]; totalUsers: number }>(`${this.apiUrl}`, { params });
-  }
-
-  assignUserToCompany(payload: AssignUserPayload): Observable<any> {
-    return this.http.post(`${this.apiUrl}/company-memberships`, payload);
-  }
-
-  createCompanyUser(payload: CreateCompanyUserPayload): Observable<any> {
-    return this.http.post(`${this.apiUrl}/company-users`, payload);
   }
 }

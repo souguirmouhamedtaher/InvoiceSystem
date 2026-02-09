@@ -41,6 +41,7 @@
     "@opentelemetry/resources": "^1.25.1",
     "@opentelemetry/sdk-node": "^0.52.1",
     "@opentelemetry/semantic-conventions": "^1.25.1",
+    "@types/xml2js": "^0.4.14",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
@@ -57,7 +58,8 @@
     "reflect-metadata": "^0.2.0",
     "run-script-webpack-plugin": "^0.2.0",
     "rxjs": "^7.8.1",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

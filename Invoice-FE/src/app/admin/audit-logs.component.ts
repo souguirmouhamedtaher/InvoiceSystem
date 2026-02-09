@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AdminService, AuditLog } from './admin.service';
 import { ClientService } from '../clients/client.service';
 import { Client } from '../clients/client.model';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-audit-logs',
@@ -91,6 +92,7 @@ export class AuditLogsComponent implements OnInit {
   private adminService = inject(AdminService);
   private clientService = inject(ClientService);
   private fb = inject(FormBuilder);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected logs = signal<AuditLog[]>([]);
   protected companies = signal<Client[]>([]);
@@ -102,6 +104,16 @@ export class AuditLogsComponent implements OnInit {
     companyId: [''],
     action: ['']
   });
+
+  constructor() {
+    effect(() => {
+      const companyId = this.companySwitcher.currentCompanyId();
+      if (companyId) {
+        this.page.set(1);
+        this.loadLogs();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadCompanies();
@@ -116,19 +128,16 @@ export class AuditLogsComponent implements OnInit {
   loadCompanies(): void {
     this.clientService.getClients({ page: 1, limit: 1000, companyType: 'mycompany' }).subscribe({
       next: (response) => {
-        this.companies.set(response?.companies?.filter((c: Client) => c.companyType === 'mycompany') || []);
+        this.companies.set(response.companies.filter((c: Client) => c.companyType === 'mycompany'));
       },
-      error: (err) => {
-        console.error('Failed to load companies:', err);
-        this.companies.set([]);
-      },
+      error: (err) => console.error('Failed to load companies:', err),
     });
   }
 
   loadLogs(): void {
     this.loading.set(true);
     const filters = {
-      companyId: this.filterForm.value.companyId || undefined,
+      companyId: this.companySwitcher.currentCompanyId() || this.filterForm.value.companyId || undefined,
       action: this.filterForm.value.action || undefined,
       page: this.page(),
       limit: 50,
@@ -136,12 +145,11 @@ export class AuditLogsComponent implements OnInit {
 
     this.adminService.getAuditLogs(filters).subscribe({
       next: (response) => {
-        this.logs.set(response?.logs || []);
+        this.logs.set(response.logs);
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Failed to load audit logs:', err);
-        this.logs.set([]);
         this.loading.set(false);
       },
     });

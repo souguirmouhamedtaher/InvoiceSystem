@@ -23,8 +23,8 @@ import {
     SalaryUseCases,
     CnssPaymentUseCases,
     TvaPaymentUseCases,
+    XmlGeneratorUseCases,
 } from './useCases';
-import { XmlGeneratorService } from './services/xml-generator.service';
 
 @Module({
     imports: [
@@ -51,7 +51,7 @@ import { XmlGeneratorService } from './services/xml-generator.service';
         SalaryUseCases,
         CnssPaymentUseCases,
         TvaPaymentUseCases,
-        XmlGeneratorService,
+        XmlGeneratorUseCases,
     ],
     exports: [
         UserFactory,
@@ -74,7 +74,7 @@ import { XmlGeneratorService } from './services/xml-generator.service';
         SalaryUseCases,
         CnssPaymentUseCases,
         TvaPaymentUseCases,
-        XmlGeneratorService,
+        XmlGeneratorUseCases,
     ],
 })
 export class ApplicationLayerModule { }

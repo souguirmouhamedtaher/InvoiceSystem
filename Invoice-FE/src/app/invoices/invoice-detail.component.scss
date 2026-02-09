@@ -124,30 +124,6 @@ h1 {
   color: #052e2b;
   background: linear-gradient(130deg, #facc15, #f97316);
   text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(250, 193, 7, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
-
-  a,
-  button {
-    margin: 0;
-  }
 }
 
 .error {

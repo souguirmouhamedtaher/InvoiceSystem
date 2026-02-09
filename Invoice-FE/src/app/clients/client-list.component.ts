@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal, effect } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Client, ClientListResponse } from './client.model';
 import { ClientService } from './client.service';
-import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-client-list',
@@ -33,19 +32,8 @@ export class ClientListComponent {
     country: [''],
   });
 
-  constructor(
-    private clientService: ClientService,
-    private companySwitcher: CompanySwitcherService
-  ) {
+  constructor(private clientService: ClientService) {
     this.loadClients(1);
-
-    // Watch for company changes and reload clients
-    effect(() => {
-      const currentCompanyId = this.companySwitcher.currentCompanyId();
-      if (currentCompanyId) {
-        this.loadClients(1);
-      }
-    });
 
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
@@ -104,7 +92,6 @@ export class ClientListComponent {
     const companyType = this.form.value.companyType || 'all';
     const city = (this.form.value.city || '').trim();
     const country = (this.form.value.country || '').trim();
-    const currentCompanyId = this.companySwitcher.currentCompanyId();
 
     if (search.length) {
       filters['search'] = search;
@@ -120,10 +107,6 @@ export class ClientListComponent {
 
     if (country.length) {
       filters['country'] = country;
-    }
-
-    if (currentCompanyId) {
-      filters['companyId'] = currentCompanyId;
     }
 
     return filters;

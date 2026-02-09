@@ -37,7 +37,6 @@ export class InvoiceService {
     invoiceStatus?: string;
     dateFrom?: string;
     dateTo?: string;
-    companyId?: string;
   }): Observable<InvoiceListResponse> {
     const query = new HttpParams({
       fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {

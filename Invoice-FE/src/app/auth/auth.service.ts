@@ -107,16 +107,4 @@ export class AuthService {
       })
       .pipe(map(() => void 0));
   }
-
-  isSuperAdmin(): boolean {
-    const token = this.getAccessToken();
-    if (!token) return false;
-
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.roles?.includes('super_admin') ?? false;
-    } catch {
-      return false;
-    }
-  }
 }
