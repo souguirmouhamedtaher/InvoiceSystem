@@ -203,6 +203,14 @@ export const buildInvoicePdfBuffer = async (params: {
   const template = fs.readFileSync(templatePath, 'utf8');
   const compileTemplate = Handlebars.compile(template);
 
+  const mycompany = invoice.mycompanyId || {};
+  const bankDetails = {
+    bankName: mycompany.bankName || null,
+    bankRib: mycompany.bankRib || null,
+    bankIBAN: mycompany.bankIBAN || null,
+    bankBIC: mycompany.bankBIC || null,
+  };
+
   const html = compileTemplate({
     invoiceNumber: invoice.invoiceNumber || String(invoice._id || ''),
     date: formatDate(invoice.dateInvoice),
@@ -214,6 +222,7 @@ export const buildInvoicePdfBuffer = async (params: {
     contact: invoice.username || '-',
     items,
     payments,
+    bankDetails,
     vatRows: vatRows.map((row) => ({
       rate: row.rate.toFixed(2),
       base: formatMoney(row.base),
