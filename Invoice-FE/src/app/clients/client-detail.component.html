@@ -1,7 +1,7 @@
 <section class="client-detail" *ngIf="client(); else loading">
   <header>
     <p class="kicker">Fiche client</p>
-    <h1>{{ client()?.companyname }}</h1>
+    <h1>{{ client()?.name }}</h1>
     <p class="subtitle">Client cree avec succes.</p>
   </header>
 
@@ -9,13 +9,13 @@
     <article class="card">
       <h3>Contact principal</h3>
       <p>{{ client()?.email }}</p>
-      <p *ngFor="let phone of client()?.phones">{{ phone }}</p>
+      <p>{{ client()?.phone }}</p>
+      <p *ngIf="client()?.taxId">{{ client()?.taxId }}</p>
     </article>
 
     <article class="card">
       <h3>Adresse</h3>
       <p>{{ client()?.address }}</p>
-      <p>{{ client()?.city }} {{ client()?.country }}</p>
     </article>
 
     <article class="card" *ngIf="client()?.notes">

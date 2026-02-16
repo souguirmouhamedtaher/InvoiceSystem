@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { ClientService } from '../clients/client.service';
-import { CreateClientPayload } from '../clients/client.model';
+import { Router, RouterLink } from '@angular/router';
+import { CompanyService } from './company.service';
+import { CreateCompanyPayload } from './company.model';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-my-company-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './my-company-create.component.html',
   styleUrl: './my-company-create.component.scss',
 })
@@ -17,19 +18,20 @@ export class MyCompanyCreateComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   private fb = inject(FormBuilder);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     companyname: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     address: ['', [Validators.required, Validators.minLength(6)]],
     phonesRaw: ['', [Validators.required, Validators.pattern(/^[+\d\s,.-]+$/)]],
-    city: [''],
+    region: [''],
     country: [''],
     notes: [''],
   });
 
   constructor(
-    private clientService: ClientService,
+    private companyService: CompanyService,
     private router: Router
   ) {}
 
@@ -47,22 +49,29 @@ export class MyCompanyCreateComponent {
       return;
     }
 
-    const payload: CreateClientPayload = {
+    const payload: CreateCompanyPayload = {
       companyname: (this.form.value.companyname || '').trim(),
-      companyType: 'mycompany',
       email: (this.form.value.email || '').trim(),
       address: (this.form.value.address || '').trim(),
       phones,
-      city: this.cleanOptional(this.form.value.city),
+      region: this.cleanOptional(this.form.value.region),
       country: this.cleanOptional(this.form.value.country),
       notes: this.cleanOptional(this.form.value.notes),
     };
 
     this.saving.set(true);
-    this.clientService.createClient(payload).subscribe({
-      next: (client) => {
+    this.companyService.createCompany(payload).subscribe({
+      next: (company: any) => {
         this.saving.set(false);
-        this.router.navigate(['/clients', client._id]);
+        const c = company?.data ?? company;
+        const id = c?._id ?? c?.id;
+        if (id) {
+          this.companySwitcher.setCreatedCompany({
+            _id: String(id),
+            companyname: c.companyname ?? '',
+          });
+        }
+        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.saving.set(false);

@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DashboardService } from './dashboard.service';
 import { CashDashboardResponse } from './dashboard.model';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,6 +21,7 @@ export class DashboardComponent {
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     year: [''],
@@ -39,6 +41,11 @@ export class DashboardComponent {
     this.form.valueChanges
       .pipe(debounceTime(250), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadData());
+
+    effect(() => {
+      this.companySwitcher.currentCompanyId();
+      this.loadData();
+    });
   }
 
   resetFilters(): void {
@@ -53,11 +60,12 @@ export class DashboardComponent {
   private loadData(): void {
     const year = this.form.value.year ? Number(this.form.value.year) : undefined;
     const month = this.form.value.month ? Number(this.form.value.month) : undefined;
+    const companyId = this.companySwitcher.currentCompanyId() || undefined;
 
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.dashboardService.getCashDashboard(year, month).subscribe({
+    this.dashboardService.getCashDashboard(year, month, companyId).subscribe({
       next: (response) => {
         this.data.set(response);
         this.loading.set(false);

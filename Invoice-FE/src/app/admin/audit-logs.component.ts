@@ -2,8 +2,8 @@ import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AdminService, AuditLog } from './admin.service';
-import { ClientService } from '../clients/client.service';
-import { Client } from '../clients/client.model';
+import { CompanyService } from '../companies/company.service';
+import { Company } from '../companies/company.model';
 import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
@@ -17,11 +17,12 @@ import { CompanySwitcherService } from '../core/company-switcher.service';
       </div>
 
       <div class="filters-card">
-        <form [formGroup]="filterForm" class="filters-form">
+        <p class="hint" *ngIf="!companySwitcher.currentCompanyId()">Selectionnez une societe dans le bandeau pour afficher son journal d'audit.</p>
+        <form [formGroup]="filterForm" class="filters-form" *ngIf="companySwitcher.currentCompanyId() || companies().length">
           <div class="form-group">
             <label for="filterCompany">Societe</label>
             <select id="filterCompany" formControlName="companyId">
-              <option value="">Toutes les societes</option>
+              <option value="">-- Selectionner --</option>
               <option *ngFor="let company of companies()" [value]="company._id">
                 {{ company.companyname }}
               </option>
@@ -90,12 +91,12 @@ import { CompanySwitcherService } from '../core/company-switcher.service';
 })
 export class AuditLogsComponent implements OnInit {
   private adminService = inject(AdminService);
-  private clientService = inject(ClientService);
+  private companyService = inject(CompanyService);
   private fb = inject(FormBuilder);
-  private companySwitcher = inject(CompanySwitcherService);
+  protected companySwitcher = inject(CompanySwitcherService);
 
   protected logs = signal<AuditLog[]>([]);
-  protected companies = signal<Client[]>([]);
+  protected companies = signal<Company[]>([]);
   protected loading = signal(false);
   protected page = signal(1);
   protected expandedLogId = signal<string | null>(null);
@@ -126,30 +127,35 @@ export class AuditLogsComponent implements OnInit {
   }
 
   loadCompanies(): void {
-    this.clientService.getClients({ page: 1, limit: 1000, companyType: 'mycompany' }).subscribe({
+    this.companyService.getCompanies({ page: 1, limit: 1000 }).subscribe({
       next: (response) => {
-        this.companies.set(response.companies.filter((c: Client) => c.companyType === 'mycompany'));
+        this.companies.set(response.companies ?? []);
       },
       error: (err) => console.error('Failed to load companies:', err),
     });
   }
 
   loadLogs(): void {
+    const companyId = this.companySwitcher.currentCompanyId() || this.filterForm.value.companyId || undefined;
+    if (!companyId) {
+      this.logs.set([]);
+      this.loading.set(false);
+      return;
+    }
     this.loading.set(true);
     const filters = {
-      companyId: this.companySwitcher.currentCompanyId() || this.filterForm.value.companyId || undefined,
       action: this.filterForm.value.action || undefined,
       page: this.page(),
       limit: 50,
     };
-
-    this.adminService.getAuditLogs(filters).subscribe({
+    this.adminService.getCompanyAuditLogs(companyId, filters).subscribe({
       next: (response) => {
-        this.logs.set(response.logs);
+        this.logs.set(response?.logs ?? []);
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Failed to load audit logs:', err);
+        this.logs.set([]);
         this.loading.set(false);
       },
     });

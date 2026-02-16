@@ -18,21 +18,33 @@
         <span class="summary-label">Total salaires</span>
         <strong class="summary-value">{{ summary.totalSalaryAmount | number: '1.2-2' }} TND</strong>
         <span class="summary-count">{{ summary.salaryCount }} paie(s)</span>
+        <ng-container *ngIf="(summary.totalSalaryAmount === 0 || summary.totalSalaryAmount == null) && (summary.expectedSalaryAmount ?? 0) > 0">
+          <span class="summary-prevision">Previsionnel ({{ summary.employeeCount ?? 0 }} employe(s)): {{ summary.expectedSalaryAmount | number: '1.2-2' }} TND</span>
+        </ng-container>
       </div>
       <div class="summary-item">
         <span class="summary-label">Total CNSS</span>
         <strong class="summary-value">{{ summary.totalCnssAmount | number: '1.2-2' }} TND</strong>
         <span class="summary-count">{{ summary.cnssCount }} paiement(s)</span>
+        <ng-container *ngIf="(summary.totalCnssAmount === 0 || summary.totalCnssAmount == null) && (summary.expectedCnssAmount ?? 0) > 0">
+          <span class="summary-prevision">Previsionnel: {{ summary.expectedCnssAmount | number: '1.2-2' }} TND</span>
+        </ng-container>
       </div>
       <div class="summary-item highlight">
         <span class="summary-label">Total general</span>
-        <strong class="summary-value total">{{ summary.totalSalaryAmount + summary.totalCnssAmount | number: '1.2-2' }} TND</strong>
+        <ng-container *ngIf="(summary.totalSalaryAmount || 0) + (summary.totalCnssAmount || 0) > 0; else totalPrevisionnel">
+          <strong class="summary-value total">{{ (summary.totalSalaryAmount || 0) + (summary.totalCnssAmount || 0) | number: '1.2-2' }} TND</strong>
+        </ng-container>
+        <ng-template #totalPrevisionnel>
+          <strong class="summary-value total">{{ (summary.expectedSalaryAmount || 0) + (summary.expectedCnssAmount || 0) | number: '1.2-2' }} TND</strong>
+          <span class="summary-prevision" *ngIf="(summary.employeeCount ?? 0) > 0">(previsionnel, {{ summary.employeeCount }} employe(s))</span>
+        </ng-template>
       </div>
     </div>
   </section>
 
   <section class="form-card collapsible">
-    <div class="form-header" (click)="showEmployeeForm.set(!showEmployeeForm())">
+    <div class="form-header" (click)="toggleEmployeeForm()">
       <h2>{{ selectedEmployee() ? 'Modifier un employe' : 'Ajouter un employe' }}</h2>
       <div class="actions-inline">
         <button class="ghost" type="button" (click)="resetEmployeeForm(); $event.stopPropagation()">Nouveau</button>
@@ -40,18 +52,8 @@
       </div>
     </div>
 
-    <form class="employee-form" [formGroup]="employeeForm" (ngSubmit)="submitEmployee()" *ngIf="showEmployeeForm()">
+    <form class="employee-form" [formGroup]="employeeForm" (ngSubmit)="submitEmployee()" (click)="$event.stopPropagation()" *ngIf="showEmployeeForm()">
       <div class="grid">
-        <label class="field">
-          <span>Societe</span>
-          <select formControlName="companyId">
-            <option value="">Selectionner</option>
-            <option *ngFor="let company of companies()" [value]="company._id">
-              {{ company.companyname }}
-            </option>
-          </select>
-        </label>
-
         <label class="field">
           <span>Prenom</span>
           <input type="text" formControlName="firstName" placeholder="Amira" />

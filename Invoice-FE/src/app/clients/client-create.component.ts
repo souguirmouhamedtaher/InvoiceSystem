@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ClientService } from './client.service';
 import { CreateClientPayload } from './client.model';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-client-create',
@@ -17,14 +18,14 @@ export class ClientCreateComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   private fb = inject(FormBuilder);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
-    companyname: ['', [Validators.required, Validators.minLength(2)]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     address: ['', [Validators.required, Validators.minLength(6)]],
-    phonesRaw: ['', [Validators.required, Validators.pattern(/^[+\d\s,.-]+$/)]],
-    city: [''],
-    country: [''],
+    phone: ['', [Validators.required, Validators.pattern(/^[+\d\s().-]+$/)]],
+    taxId: [''],
     notes: [''],
   });
 
@@ -41,20 +42,19 @@ export class ClientCreateComponent {
       return;
     }
 
-    const phones = this.parsePhones(this.form.value.phonesRaw || '');
-    if (!phones.length) {
-      this.errorMessage.set('Ajoutez au moins un numero de telephone valide.');
+    const companyId = this.companySwitcher.currentCompanyId();
+    if (!companyId) {
+      this.errorMessage.set('Selectionnez une societe avant de creer un client.');
       return;
     }
 
     const payload: CreateClientPayload = {
-      companyname: (this.form.value.companyname || '').trim(),
-      companyType: 'client',
+      companyId,
+      name: (this.form.value.name || '').trim(),
       email: (this.form.value.email || '').trim(),
       address: (this.form.value.address || '').trim(),
-      phones,
-      city: this.cleanOptional(this.form.value.city),
-      country: this.cleanOptional(this.form.value.country),
+      phone: (this.form.value.phone || '').trim(),
+      taxId: this.cleanOptional(this.form.value.taxId),
       notes: this.cleanOptional(this.form.value.notes),
     };
 
@@ -70,13 +70,6 @@ export class ClientCreateComponent {
         this.errorMessage.set(message);
       },
     });
-  }
-
-  private parsePhones(value: string): string[] {
-    return value
-      .split(',')
-      .map((phone) => phone.trim())
-      .filter((phone) => phone.length > 0);
   }
 
   private cleanOptional(value?: string | null): string | undefined {

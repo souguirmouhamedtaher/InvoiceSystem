@@ -21,13 +21,11 @@ export class ClientEditComponent {
   private route = inject(ActivatedRoute);
 
   protected readonly form = this.fb.group({
-    companyname: ['', [Validators.required, Validators.minLength(2)]],
-    companyType: ['client', [Validators.required]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     address: ['', [Validators.required, Validators.minLength(6)]],
-    phonesRaw: ['', [Validators.required, Validators.pattern(/^[+\d\s,.-]+$/)]],
-    city: [''],
-    country: [''],
+    phone: ['', [Validators.required, Validators.pattern(/^[+\d\s().-]+$/)]],
+    taxId: [''],
     notes: [''],
   });
 
@@ -41,13 +39,11 @@ export class ClientEditComponent {
       this.clientService.getClientById(this.clientId).subscribe({
         next: (client) => {
           this.form.patchValue({
-            companyname: client.companyname,
-            companyType: client.companyType,
+            name: client.name,
             email: client.email,
             address: client.address,
-            phonesRaw: client.phones.join(', '),
-            city: client.city || '',
-            country: client.country || '',
+            phone: client.phone,
+            taxId: client.taxId || '',
             notes: client.notes || '',
           });
           this.loading.set(false);
@@ -72,20 +68,12 @@ export class ClientEditComponent {
       return;
     }
 
-    const phones = this.parsePhones(this.form.value.phonesRaw || '');
-    if (!phones.length) {
-      this.errorMessage.set('Ajoutez au moins un numero de telephone valide.');
-      return;
-    }
-
     const payload: UpdateClientPayload = {
-      companyname: (this.form.value.companyname || '').trim(),
-      companyType: (this.form.value.companyType || 'client') as UpdateClientPayload['companyType'],
+      name: (this.form.value.name || '').trim(),
       email: (this.form.value.email || '').trim(),
       address: (this.form.value.address || '').trim(),
-      phones,
-      city: this.cleanOptional(this.form.value.city),
-      country: this.cleanOptional(this.form.value.country),
+      phone: (this.form.value.phone || '').trim(),
+      taxId: this.cleanOptional(this.form.value.taxId),
       notes: this.cleanOptional(this.form.value.notes),
     };
 
@@ -105,13 +93,6 @@ export class ClientEditComponent {
         this.errorMessage.set(message);
       },
     });
-  }
-
-  private parsePhones(value: string): string[] {
-    return value
-      .split(',')
-      .map((phone) => phone.trim())
-      .filter((phone) => phone.length > 0);
   }
 
   private cleanOptional(value?: string | null): string | undefined {

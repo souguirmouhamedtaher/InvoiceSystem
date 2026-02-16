@@ -5,8 +5,8 @@ import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CreateEmployeePayload, Employee, EmployeeListResponse, UpdateEmployeePayload } from './employee.model';
 import { EmployeeService } from './employee.service';
-import { Client, ClientListResponse } from '../clients/client.model';
-import { ClientService } from '../clients/client.service';
+import { Company, CompanyListResponse } from '../companies/company.model';
+import { CompanyService } from '../companies/company.service';
 import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
@@ -18,7 +18,7 @@ import { CompanySwitcherService } from '../core/company-switcher.service';
 })
 export class EmployeeListComponent {
   protected readonly employees = signal<Employee[]>([]);
-  protected readonly companies = signal<Client[]>([]);
+  protected readonly companies = signal<Company[]>([]);
   protected readonly selectedEmployee = signal<Employee | null>(null);
   protected readonly saving = signal(false);
   protected readonly formError = signal<string | null>(null);
@@ -43,6 +43,9 @@ export class EmployeeListComponent {
     totalCnssAmount: number;
     salaryCount: number;
     cnssCount: number;
+    employeeCount?: number;
+    expectedSalaryAmount?: number;
+    expectedCnssAmount?: number;
   } | null>(null);
   protected readonly summaryMonth = signal<string>('');
   protected readonly summaryCompanyId = signal<string | undefined>(undefined);
@@ -64,7 +67,7 @@ export class EmployeeListComponent {
   });
 
   protected readonly employeeForm = this.fb.group({
-    companyId: ['', [Validators.required]],
+    companyId: [''],
     firstName: ['', [Validators.required, Validators.minLength(2)]],
     lastName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.email]],
@@ -86,17 +89,16 @@ export class EmployeeListComponent {
 
   constructor(
     private employeeService: EmployeeService,
-    private clientService: ClientService
+    private companyService: CompanyService
   ) {
     this.loadCompanies();
     this.loadEmployees(1);
-    this.loadPayrollSummary();
 
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadEmployees(1));
 
-    // Reload when company changes
+    // Reload employees and payroll summary when company changes (and when company becomes available after load)
     effect(() => {
       const companyId = this.companySwitcher.currentCompanyId();
       if (companyId) {
@@ -107,6 +109,15 @@ export class EmployeeListComponent {
         this.loadPayrollSummary(undefined, companyId);
       }
     });
+  }
+
+  toggleEmployeeForm(): void {
+    if (!this.showEmployeeForm()) {
+      this.employeeForm.patchValue({
+        companyId: this.companySwitcher.currentCompanyId() || '',
+      });
+    }
+    this.showEmployeeForm.set(!this.showEmployeeForm());
   }
 
   get totalPages(): number {
@@ -131,8 +142,9 @@ export class EmployeeListComponent {
 
   resetEmployeeForm(): void {
     this.selectedEmployee.set(null);
+    const currentCompanyId = this.companySwitcher.currentCompanyId() || '';
     this.employeeForm.reset({
-      companyId: '',
+      companyId: currentCompanyId,
       firstName: '',
       lastName: '',
       email: '',
@@ -165,6 +177,7 @@ export class EmployeeListComponent {
       notes: employee.notes || '',
     });
     this.formError.set(null);
+    this.showEmployeeForm.set(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -186,8 +199,14 @@ export class EmployeeListComponent {
       ? Number(this.employeeForm.value.cnssRatePercent || 0)
       : 0;
 
+    const companyId = this.companySwitcher.currentCompanyId() || this.employeeForm.value.companyId || '';
+    if (!selected && !companyId) {
+      this.formError.set('Veuillez selectionner une societe (en haut de page).');
+      return;
+    }
+
     const payload: CreateEmployeePayload = {
-      companyId: this.employeeForm.value.companyId || '',
+      companyId,
       firstName: (this.employeeForm.value.firstName || '').trim(),
       lastName: (this.employeeForm.value.lastName || '').trim(),
       email: this.cleanOptional(this.employeeForm.value.email),
@@ -200,6 +219,7 @@ export class EmployeeListComponent {
 
     this.saving.set(true);
 
+    const companyIdForCreate = payload.companyId;
     const request = selected
       ? this.employeeService.updateEmployee(selected._id, payload as UpdateEmployeePayload)
       : this.employeeService.createEmployee(payload);
@@ -208,7 +228,9 @@ export class EmployeeListComponent {
       next: () => {
         this.saving.set(false);
         this.resetEmployeeForm();
-        this.loadEmployees(this.page());
+        this.showEmployeeForm.set(false);
+        this.loadEmployeesForCompany(1, companyIdForCreate || undefined);
+        this.loadPayrollSummary(undefined, companyIdForCreate || undefined);
       },
       error: (err) => {
         this.saving.set(false);
@@ -328,13 +350,13 @@ export class EmployeeListComponent {
     this.importMessage.set(null);
     this.importError.set(null);
 
-    if (this.csvForm.invalid) {
+    const companyId = this.companySwitcher.currentCompanyId() || this.csvForm.value.companyId || '';
+    if (!companyId) {
       this.csvForm.markAllAsTouched();
       this.importError.set('Selectionnez une societe pour exporter.');
       return;
     }
 
-    const companyId = this.csvForm.value.companyId || '';
     this.employeeService.exportEmployeesCsv(companyId).subscribe({
       next: (csv) => {
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -360,11 +382,15 @@ export class EmployeeListComponent {
   }
 
   private loadEmployees(page: number): void {
+    const companyId = this.companySwitcher.currentCompanyId() || this.form.value.companyId || undefined;
+    this.loadEmployeesForCompany(page, companyId);
+  }
+
+  private loadEmployeesForCompany(page: number, companyId?: string): void {
     this.loading.set(true);
     this.errorMessage.set(null);
 
     const search = (this.form.value.search || '').trim();
-    const companyId = this.companySwitcher.currentCompanyId() || this.form.value.companyId || undefined;
 
     this.employeeService.getEmployees({ page, limit: this.limit, search, companyId }).subscribe({
       next: (response: EmployeeListResponse) => {
@@ -387,8 +413,8 @@ export class EmployeeListComponent {
   }
 
   private loadCompanies(): void {
-    this.clientService.getClients({ page: 1, limit: 200, companyType: 'mycompany' }).subscribe({
-      next: (response: ClientListResponse) => this.companies.set(response.companies),
+    this.companyService.getCompanies({ page: 1, limit: 200 }).subscribe({
+      next: (response: CompanyListResponse) => this.companies.set(response.companies),
       error: () => this.companies.set([]),
     });
   }
@@ -407,15 +433,8 @@ export class EmployeeListComponent {
   }
 
   refreshSummary(): void {
-    if (this.summaryMonth()) {
-      const resolvedCompanyId = this.summaryCompanyId() || this.companySwitcher.currentCompanyId() || undefined;
-      this.employeeService.getPayrollSummary({
-        month: this.summaryMonth(),
-        companyId: resolvedCompanyId,
-      }).subscribe({
-        next: (summary) => this.payrollSummary.set(summary),
-        error: () => this.payrollSummary.set(null),
-      });
-    }
+    const month = this.summaryMonth();
+    const companyId = this.summaryCompanyId() || this.companySwitcher.currentCompanyId() || undefined;
+    this.loadPayrollSummary(month || undefined, companyId);
   }
 }

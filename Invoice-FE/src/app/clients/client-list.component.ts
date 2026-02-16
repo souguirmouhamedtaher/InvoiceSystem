@@ -6,6 +6,7 @@ import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Client, ClientListResponse } from './client.model';
 import { ClientService } from './client.service';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-client-list',
@@ -24,12 +25,10 @@ export class ClientListComponent {
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     search: [''],
-    companyType: ['all'],
-    city: [''],
-    country: [''],
   });
 
   constructor(private clientService: ClientService) {
@@ -59,9 +58,6 @@ export class ClientListComponent {
   resetFilters(): void {
     this.form.reset({
       search: '',
-      companyType: 'all',
-      city: '',
-      country: '',
     });
   }
 
@@ -70,11 +66,20 @@ export class ClientListComponent {
     this.errorMessage.set(null);
 
     const filters = this.buildFilters();
+    const companyId = this.companySwitcher.currentCompanyId();
+    if (!companyId) {
+      this.clients.set([]);
+      this.total.set(0);
+      this.page.set(1);
+      this.loading.set(false);
+      this.errorMessage.set('Selectionnez une societe pour afficher les clients.');
+      return;
+    }
 
-    this.clientService.getClients({ page, limit: this.limit, ...filters }).subscribe({
+    this.clientService.getClients({ companyId, page, limit: this.limit, ...filters }).subscribe({
       next: (response: ClientListResponse) => {
-        this.clients.set(response.companies);
-        this.total.set(response.totalCompanies);
+        this.clients.set(response.clients);
+        this.total.set(response.totalClients);
         this.page.set(page);
         this.loading.set(false);
       },
@@ -89,24 +94,9 @@ export class ClientListComponent {
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
     const search = (this.form.value.search || '').trim();
-    const companyType = this.form.value.companyType || 'all';
-    const city = (this.form.value.city || '').trim();
-    const country = (this.form.value.country || '').trim();
 
     if (search.length) {
       filters['search'] = search;
-    }
-
-    if (companyType !== 'all') {
-      filters['companyType'] = companyType;
-    }
-
-    if (city.length) {
-      filters['city'] = city;
-    }
-
-    if (country.length) {
-      filters['country'] = country;
     }
 
     return filters;

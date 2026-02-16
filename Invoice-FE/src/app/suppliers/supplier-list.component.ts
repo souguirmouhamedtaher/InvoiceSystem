@@ -4,8 +4,9 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Client, ClientListResponse } from '../clients/client.model';
-import { ClientService } from '../clients/client.service';
+import { Supplier, SupplierListResponse } from './supplier.model';
+import { SupplierService } from './supplier.service';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-supplier-list',
@@ -15,7 +16,7 @@ import { ClientService } from '../clients/client.service';
   styleUrl: './supplier-list.component.scss',
 })
 export class SupplierListComponent {
-  protected readonly suppliers = signal<Client[]>([]);
+  protected readonly suppliers = signal<Supplier[]>([]);
   protected readonly total = signal(0);
   protected readonly page = signal(1);
   protected readonly limit = 10;
@@ -24,14 +25,13 @@ export class SupplierListComponent {
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     search: [''],
-    city: [''],
-    country: [''],
   });
 
-  constructor(private clientService: ClientService) {
+  constructor(private supplierService: SupplierService) {
     this.loadSuppliers(1);
 
     this.form.valueChanges
@@ -58,8 +58,6 @@ export class SupplierListComponent {
   resetFilters(): void {
     this.form.reset({
       search: '',
-      city: '',
-      country: '',
     });
   }
 
@@ -68,16 +66,25 @@ export class SupplierListComponent {
     this.errorMessage.set(null);
 
     const filters = this.buildFilters();
+    const companyId = this.companySwitcher.currentCompanyId();
+    if (!companyId) {
+      this.suppliers.set([]);
+      this.total.set(0);
+      this.page.set(1);
+      this.loading.set(false);
+      this.errorMessage.set('Selectionnez une societe pour afficher les fournisseurs.');
+      return;
+    }
 
-    this.clientService.getClients({
+    this.supplierService.getSuppliers({
+      companyId,
       page,
       limit: this.limit,
-      companyType: 'supplier',
       ...filters,
     }).subscribe({
-      next: (response: ClientListResponse) => {
-        this.suppliers.set(response.companies);
-        this.total.set(response.totalCompanies);
+      next: (response: SupplierListResponse) => {
+        this.suppliers.set(response.suppliers);
+        this.total.set(response.totalSuppliers);
         this.page.set(page);
         this.loading.set(false);
       },
@@ -92,19 +99,9 @@ export class SupplierListComponent {
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
     const search = (this.form.value.search || '').trim();
-    const city = (this.form.value.city || '').trim();
-    const country = (this.form.value.country || '').trim();
 
     if (search.length) {
       filters['search'] = search;
-    }
-
-    if (city.length) {
-      filters['city'] = city;
-    }
-
-    if (country.length) {
-      filters['country'] = country;
     }
 
     return filters;

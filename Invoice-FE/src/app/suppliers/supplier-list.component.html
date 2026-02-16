@@ -11,17 +11,7 @@
   <form class="filters" [formGroup]="form">
     <label class="field">
       <span>Recherche</span>
-      <input type="text" formControlName="search" placeholder="Nom, email, ville" />
-    </label>
-
-    <label class="field">
-      <span>Ville</span>
-      <input type="text" formControlName="city" placeholder="Tunis" />
-    </label>
-
-    <label class="field">
-      <span>Pays</span>
-      <input type="text" formControlName="country" placeholder="Tunisie" />
+      <input type="text" formControlName="search" placeholder="Nom, email" />
     </label>
 
     <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
@@ -34,14 +24,14 @@
     <article class="card" *ngFor="let supplier of suppliers()">
       <div class="card-header">
         <div>
-          <h3>{{ supplier.companyname }}</h3>
+          <h3>{{ supplier.name }}</h3>
           <p>{{ supplier.email }}</p>
         </div>
-        <span class="pill">{{ supplier.companyType }}</span>
       </div>
       <div class="card-body">
         <p>{{ supplier.address }}</p>
-        <p *ngIf="supplier.city || supplier.country">{{ supplier.city }} {{ supplier.country }}</p>
+        <p>{{ supplier.phone }}</p>
+        <p *ngIf="supplier.taxId">{{ supplier.taxId }}</p>
       </div>
       <a class="link" [routerLink]="['/suppliers', supplier._id]">Voir fiche</a>
     </article>

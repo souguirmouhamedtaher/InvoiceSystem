@@ -2,8 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ClientService } from '../clients/client.service';
-import { CreateClientPayload } from '../clients/client.model';
+import { SupplierService } from './supplier.service';
+import { CreateSupplierPayload } from './supplier.model';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-supplier-create',
@@ -17,22 +18,19 @@ export class SupplierCreateComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   private fb = inject(FormBuilder);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
-    companyname: ['', [Validators.required, Validators.minLength(2)]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    accountingEmail: ['', [Validators.email]],
-    supplierType: [''],
-    vatIncluded: [false],
     address: ['', [Validators.required, Validators.minLength(6)]],
-    phonesRaw: ['', [Validators.required, Validators.pattern(/^[+\d\s,.-]+$/)]],
-    city: [''],
-    country: [''],
+    phone: ['', [Validators.required, Validators.pattern(/^[+\d\s().-]+$/)]],
+    taxId: [''],
     notes: [''],
   });
 
   constructor(
-    private clientService: ClientService,
+    private supplierService: SupplierService,
     private router: Router
   ) {}
 
@@ -44,45 +42,33 @@ export class SupplierCreateComponent {
       return;
     }
 
-    const phones = this.parsePhones(this.form.value.phonesRaw || '');
-    if (!phones.length) {
-      this.errorMessage.set('Ajoutez au moins un numero de telephone valide.');
+    const companyId = this.companySwitcher.currentCompanyId();
+    if (!companyId) {
+      this.errorMessage.set('Selectionnez une societe avant de creer un fournisseur.');
       return;
     }
 
-    const payload: CreateClientPayload = {
-      companyname: (this.form.value.companyname || '').trim(),
-      companyType: 'supplier',
+    const payload: CreateSupplierPayload = {
+      companyId,
+      name: (this.form.value.name || '').trim(),
       email: (this.form.value.email || '').trim(),
-      accountingEmail: this.cleanOptional(this.form.value.accountingEmail),
-      supplierType: this.cleanOptional(this.form.value.supplierType),
-      vatIncluded: !!this.form.value.vatIncluded,
       address: (this.form.value.address || '').trim(),
-      phones,
-      city: this.cleanOptional(this.form.value.city),
-      country: this.cleanOptional(this.form.value.country),
+      phone: (this.form.value.phone || '').trim(),
+      taxId: this.cleanOptional(this.form.value.taxId),
       notes: this.cleanOptional(this.form.value.notes),
     };
 
     this.saving.set(true);
-    this.clientService.createClient(payload).subscribe({
+    this.supplierService.createSupplier(payload).subscribe({
       next: (supplier) => {
         this.saving.set(false);
-        this.router.navigate(['/clients', supplier._id]);
+        this.router.navigate(['/suppliers', supplier._id]);
       },
       error: (err) => {
         this.saving.set(false);
-        const message = this.humanizeError(err?.error?.message);
-        this.errorMessage.set(message);
+        this.errorMessage.set(this.humanizeError(err));
       },
     });
-  }
-
-  private parsePhones(value: string): string[] {
-    return value
-      .split(',')
-      .map((phone) => phone.trim())
-      .filter((phone) => phone.length > 0);
   }
 
   private cleanOptional(value?: string | null): string | undefined {
@@ -90,19 +76,26 @@ export class SupplierCreateComponent {
     return trimmed.length ? trimmed : undefined;
   }
 
-  private humanizeError(message?: string): string {
+  private humanizeError(err: any): string {
+    const msg = err?.error?.message;
+    const errors = err?.error?.errors;
+    if (Array.isArray(errors) && errors.length) {
+      const parts = errors.map((e: any) => e?.message || `${e?.property}: ${e?.constraints ? Object.values(e.constraints).join(', ') : 'invalide'}`);
+      return parts.join('. ');
+    }
+    if (Array.isArray(msg) && msg.length) {
+      return msg.join('. ');
+    }
+    const message = typeof msg === 'string' ? msg : '';
     if (!message) {
       return 'Une erreur est survenue. Veuillez reessayer.';
     }
-
     if (message.includes('name already exists')) {
       return 'Ce fournisseur existe deja.';
     }
-
     if (message.includes('email already exists')) {
       return 'Cet email est deja utilise.';
     }
-
     return message;
   }
 }

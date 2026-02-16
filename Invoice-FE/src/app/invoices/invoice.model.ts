@@ -61,9 +61,9 @@ export type Invoice = {
   payments?: InvoicePayment[];
   paidAmount?: number;
   remainingAmount?: number;
-  clientId?: { _id: string; companyname: string; email: string };
-  supplierId?: { _id: string; companyname: string; email: string };
-  mycompanyId?: { _id: string; companyname: string; email: string };
+  clientId?: { _id: string; name: string; email: string };
+  supplierId?: { _id: string; name: string; email: string };
+  companyId?: { _id: string; companyname: string; email: string };
 };
 
 export type AddInvoicePaymentPayload = InvoicePayment;
@@ -82,7 +82,7 @@ export type CreateInvoicePayload = {
   notes?: string;
   clientId?: string;
   supplierId?: string;
-  mycompanyId?: string;
+  companyId?: string;
 };
 
 export type InvoiceCalculatePayload = CreateInvoicePayload;

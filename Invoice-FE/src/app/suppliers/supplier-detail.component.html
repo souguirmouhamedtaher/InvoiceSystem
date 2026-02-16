@@ -1,7 +1,7 @@
 <section class="supplier-detail" *ngIf="supplier(); else loading">
   <header>
     <p class="kicker">Fiche fournisseur</p>
-    <h1>{{ supplier()?.companyname }}</h1>
+    <h1>{{ supplier()?.name }}</h1>
     <p class="subtitle">Fournisseur cree avec succes.</p>
   </header>
 
@@ -9,20 +9,13 @@
     <article class="card">
       <h3>Contact principal</h3>
       <p>{{ supplier()?.email }}</p>
-      <p *ngIf="supplier()?.accountingEmail">Compta: {{ supplier()?.accountingEmail }}</p>
-      <p *ngFor="let phone of supplier()?.phones">{{ phone }}</p>
+      <p>{{ supplier()?.phone }}</p>
+      <p *ngIf="supplier()?.taxId">{{ supplier()?.taxId }}</p>
     </article>
 
     <article class="card">
       <h3>Adresse</h3>
       <p>{{ supplier()?.address }}</p>
-      <p>{{ supplier()?.city }} {{ supplier()?.country }}</p>
-    </article>
-
-    <article class="card">
-      <h3>Informations fournisseur</h3>
-      <p *ngIf="supplier()?.supplierType">Type: {{ supplier()?.supplierType }}</p>
-      <p>TVA incluse: {{ supplier()?.vatIncluded ? 'Oui' : 'Non' }}</p>
     </article>
 
     <article class="card" *ngIf="supplier()?.notes">

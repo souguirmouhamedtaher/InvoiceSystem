@@ -111,14 +111,11 @@ export class EmployeeService {
     });
 
     return this.http
-      .get<ApiResponse<{
-        month: string;
-        totalSalaryAmount: number;
-        totalCnssAmount: number;
-        salaryCount: number;
-        cnssCount: number;
-      }>>(`${environment.apiBaseUrl}/employee/payroll/summary`, { params: query })
-      .pipe(map((response) => response.data));
+      .get<
+        | ApiResponse<{ month: string; totalSalaryAmount: number; totalCnssAmount: number; salaryCount: number; cnssCount: number }>
+        | { month: string; totalSalaryAmount: number; totalCnssAmount: number; salaryCount: number; cnssCount: number }
+      >(`${environment.apiBaseUrl}/employee/payroll/summary`, { params: query })
+      .pipe(map((response: any) => response?.data ?? response));
   }
 
   importEmployeesCsv(payload: { companyId: string; csv: string }): Observable<{ 

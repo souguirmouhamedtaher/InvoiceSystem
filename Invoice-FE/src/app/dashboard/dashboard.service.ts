@@ -9,19 +9,17 @@ import { CashDashboardResponse } from './dashboard.model';
 export class DashboardService {
   private http = inject(HttpClient);
 
-  getCashDashboard(year?: number, month?: number): Observable<CashDashboardResponse> {
-    const params = new HttpParams({
-      fromObject: {
-        ...(year ? { year: String(year) } : {}),
-        ...(month ? { month: String(month) } : {}),
-      },
-    });
+  getCashDashboard(year?: number, month?: number, companyId?: string): Observable<CashDashboardResponse> {
+    const params: Record<string, string> = {};
+    if (year != null && year !== undefined) params['year'] = String(year);
+    if (month != null && month !== undefined) params['month'] = String(month);
+    if (companyId) params['companyId'] = companyId;
 
     return this.http
-      .get<ApiResponse<CashDashboardResponse>>(
+      .get<ApiResponse<CashDashboardResponse> | CashDashboardResponse>(
         `${environment.apiBaseUrl}/analysis/cash-dashboard`,
-        { params }
+        { params: new HttpParams({ fromObject: params }) }
       )
-      .pipe(map((response) => response.data));
+      .pipe(map((response: any) => response?.data ?? response));
   }
 }

@@ -5,6 +5,7 @@ import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from './auth/auth.service';
 import { CompanySwitcherComponent } from './core/company-switcher.component';
+import { CompanySwitcherService } from './core/company-switcher.service';
 
 @Component({
   selector: 'app-root',
@@ -14,10 +15,21 @@ import { CompanySwitcherComponent } from './core/company-switcher.component';
 })
 export class App {
   protected readonly auth = inject(AuthService);
+  protected readonly companySwitcher = inject(CompanySwitcherService);
   protected readonly isAuthRoute = signal(false);
 
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+
+  /** True when selected company context is owner (can manage team members). */
+  protected isOwnerContext(): boolean {
+    return this.companySwitcher.currentMembership()?.role === 'OWNER';
+  }
+
+  /** True when current user is super admin (can create companies). */
+  protected isSuperAdmin(): boolean {
+    return this.auth.isSuperAdmin();
+  }
 
   constructor() {
     this.isAuthRoute.set(this.isAuthPath(this.router.url));
@@ -31,7 +43,15 @@ export class App {
   }
 
   logout(): void {
-    this.auth.logout().subscribe();
+    this.auth.logout().subscribe({
+      next: () => this.navigateToLogin(),
+      error: () => this.navigateToLogin(),
+    });
+  }
+
+  private navigateToLogin(): void {
+    this.companySwitcher.clearSelection();
+    this.router.navigate(['/login']);
   }
 
   private isAuthPath(url: string): boolean {

@@ -1,24 +1,25 @@
 import { Component, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { CompanySwitcherService } from '../core/company-switcher.service';
 import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-company-switcher',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="company-switcher" *ngIf="auth.isLoggedIn() && companySwitcher.availableMemberships().length > 0">
-      <label for="company-select" class="switcher-label">Societe:</label>
+      <label for="company-select" class="switcher-label">Société</label>
       <select 
         id="company-select"
         class="switcher-select"
-        [value]="companySwitcher.currentCompanyId() || ''"
-        (change)="onCompanyChange($event)"
+        [ngModel]="companySwitcher.currentCompanyId() || ''"
+        (ngModelChange)="onCompanyChange($event)"
       >
-        <option *ngFor="let membership of companySwitcher.availableMemberships()" 
-                [value]="membership.companyId._id">
-          {{ membership.companyId.companyname }} ({{ membership.role }})
+        <option *ngFor="let m of companySwitcher.availableMemberships()" 
+                [value]="companySwitcher.idOf(m)">
+          {{ m.companyId.companyname }}
         </option>
       </select>
     </div>
@@ -26,46 +27,50 @@ import { AuthService } from '../auth/auth.service';
   styles: [`
     .company-switcher {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      margin: 1rem 0;
+      padding: 0.75rem 0;
     }
 
     .switcher-label {
-      font-size: 0.875rem;
-      color: rgba(255, 255, 255, 0.7);
-      font-weight: 500;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.9);
     }
 
     .switcher-select {
-      flex: 1;
-      padding: 0.5rem;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-      color: white;
-      font-size: 0.875rem;
+      width: 100%;
+      padding: 0.65rem 2.25rem 0.65rem 0.85rem;
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 10px;
+      color: #f8fafc;
+      font-size: 0.9rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .switcher-select:hover {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
+      background-color: rgba(15, 23, 42, 0.55);
+      border-color: rgba(148, 163, 184, 0.35);
     }
 
     .switcher-select:focus {
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+      border-color: #5eead4;
+      box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.25);
     }
 
     .switcher-select option {
-      background: #1f2937;
-      color: white;
+      background: #1e293b;
+      color: #f8fafc;
     }
   `]
 })
@@ -91,8 +96,7 @@ export class CompanySwitcherComponent implements OnInit {
     this.companySwitcher.restoreSelectedCompany();
   }
 
-  onCompanyChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.companySwitcher.selectCompany(select.value);
+  onCompanyChange(companyId: string): void {
+    if (companyId) this.companySwitcher.selectCompany(companyId);
   }
 }

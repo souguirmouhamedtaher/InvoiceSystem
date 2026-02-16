@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/auth.guard';
+import { superAdminGuard } from './auth/super-admin.guard';
 import { companyRequiredGuard } from './core/company-required.guard';
 
 export const routes: Routes = [
@@ -62,13 +63,13 @@ export const routes: Routes = [
 	},
 	{
 		path: 'my-companies',
-		canActivate: [authGuard, companyRequiredGuard],
+		canActivate: [authGuard, superAdminGuard],
 		loadComponent: () =>
 			import('./companies/my-company-list.component').then((m) => m.MyCompanyListComponent),
 	},
 	{
 		path: 'my-companies/new',
-		canActivate: [authGuard, companyRequiredGuard],
+		canActivate: [authGuard, superAdminGuard],
 		loadComponent: () =>
 			import('./companies/my-company-create.component').then((m) => m.MyCompanyCreateComponent),
 	},

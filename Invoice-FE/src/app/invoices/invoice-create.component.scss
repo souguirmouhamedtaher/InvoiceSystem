@@ -61,6 +61,28 @@
   background: #fff;
 }
 
+/* Invoice Studio–style selects: clearer affordance and focus */
+.select-studio,
+.field select.select-studio {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select-studio:hover {
+  border-color: rgba(15, 23, 42, 0.25);
+}
+
+.select-studio:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+}
+
 .lines {
   display: grid;
   gap: 1.5rem;
@@ -123,6 +145,62 @@
 
 .ghost.danger {
   border-color: rgba(248, 113, 113, 0.5);
+  color: #b91c1c;
+}
+
+.form-errors {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #b91c1c;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.form-errors-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.form-errors ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.form-errors li {
+  margin: 0.25rem 0;
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.field-hint a {
+  color: #0d9488;
+  font-weight: 600;
+}
+
+.field-invalid input,
+.field-invalid select,
+.field-invalid textarea {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(248, 113, 113, 0.04);
+}
+
+.line-invalid {
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.field span em {
+  font-style: normal;
   color: #b91c1c;
 }
 

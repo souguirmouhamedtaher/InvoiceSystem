@@ -1,44 +1,63 @@
 <section class="company-selector">
   <div class="selector-container">
-    <div class="selector-header">
+    <header class="selector-header">
       <h1>Selectionnez une Societe</h1>
       <p>Choisissez la societe que vous souhaitez gerer</p>
-    </div>
+    </header>
 
-    <div class="loading" *ngIf="loading()">
-      <div class="spinner"></div>
-      <p>Chargement de vos societes...</p>
-    </div>
+    @if (loading()) {
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Chargement de vos societes...</p>
+      </div>
+    }
 
-    <div class="error-message" *ngIf="error() && !loading()">
-      {{ error() }}
-    </div>
+    @if (error() && !loading()) {
+      <div class="error-message">{{ error() }}</div>
+    }
 
-    <div class="companies-grid" *ngIf="!loading() && companies().length > 0">
-      <button
-        class="company-card"
-        *ngFor="let membership of companies()"
-        (click)="selectCompany(membership.companyId._id)"
-      >
-        <div class="card-header">
-          <h2>{{ membership.companyId.companyname }}</h2>
-          <p class="company-type">{{ membership.companyId.companyType }}</p>
+    @if (!loading() && companies().length > 0) {
+      <div class="companies-grid">
+        @for (m of companies(); track trackById($index, m)) {
+          <button
+            type="button"
+            class="company-card"
+            (click)="onSelect(m)"
+          >
+            <div class="card-header">
+              <h2>{{ m.companyId.companyname }}</h2>
+            </div>
+            <div class="card-details">
+              <p>Role: {{ m.role }}</p>
+            </div>
+            <div class="card-action">
+              <span class="select-text">Selectionner</span>
+              <span class="arrow">→</span>
+            </div>
+          </button>
+        }
+      </div>
+
+      @if (auth.isSuperAdmin()) {
+        <div class="create-section">
+          <button type="button" class="create-button" (click)="createNew()">
+            <span class="plus-icon">+</span>
+            Creer une nouvelle Societe
+          </button>
         </div>
-        <div class="card-details">
-          <p>Role: {{ membership.role }}</p>
-        </div>
-        <div class="card-action">
-          <span class="select-text">Selectionner</span>
-          <span class="arrow">→</span>
-        </div>
-      </button>
-    </div>
+      }
+    }
 
-    <div class="create-section">
-      <button class="create-button" (click)="createNewCompany()">
-        <span class="plus-icon">+</span>
-        Creer une nouvelle Societe
-      </button>
-    </div>
+    @if (!loading() && companies().length === 0 && !error()) {
+      <div class="empty-state">
+        <p>Vous n'avez pas encore de societe.</p>
+        @if (auth.isSuperAdmin()) {
+          <button type="button" class="create-button" (click)="createNew()">
+            <span class="plus-icon">+</span>
+            Creer ma premiere societe
+          </button>
+        }
+      </div>
+    }
   </div>
 </section>

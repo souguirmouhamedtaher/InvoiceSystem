@@ -4,8 +4,8 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Client, ClientListResponse } from '../clients/client.model';
-import { ClientService } from '../clients/client.service';
+import { Company, CompanyListResponse } from './company.model';
+import { CompanyService } from './company.service';
 
 @Component({
   selector: 'app-my-company-list',
@@ -15,7 +15,7 @@ import { ClientService } from '../clients/client.service';
   styleUrl: './my-company-list.component.scss',
 })
 export class MyCompanyListComponent {
-  protected readonly companies = signal<Client[]>([]);
+  protected readonly companies = signal<Company[]>([]);
   protected readonly total = signal(0);
   protected readonly page = signal(1);
   protected readonly limit = 10;
@@ -27,11 +27,11 @@ export class MyCompanyListComponent {
 
   protected readonly form = this.fb.group({
     search: [''],
-    city: [''],
+    region: [''],
     country: [''],
   });
 
-  constructor(private clientService: ClientService) {
+  constructor(private companyService: CompanyService) {
     this.loadCompanies(1);
 
     this.form.valueChanges
@@ -58,7 +58,7 @@ export class MyCompanyListComponent {
   resetFilters(): void {
     this.form.reset({
       search: '',
-      city: '',
+      region: '',
       country: '',
     });
   }
@@ -69,10 +69,10 @@ export class MyCompanyListComponent {
 
     const filters = this.buildFilters();
 
-    this.clientService
-      .getClients({ page, limit: this.limit, companyType: 'mycompany', ...filters })
+    this.companyService
+      .getCompanies({ page, limit: this.limit, ...filters })
       .subscribe({
-        next: (response: ClientListResponse) => {
+        next: (response: CompanyListResponse) => {
           this.companies.set(response.companies);
           this.total.set(response.totalCompanies);
           this.page.set(page);
@@ -89,15 +89,15 @@ export class MyCompanyListComponent {
   private buildFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
     const search = (this.form.value.search || '').trim();
-    const city = (this.form.value.city || '').trim();
+    const region = (this.form.value.region || '').trim();
     const country = (this.form.value.country || '').trim();
 
     if (search.length) {
       filters['search'] = search;
     }
 
-    if (city.length) {
-      filters['city'] = city;
+    if (region.length) {
+      filters['region'] = region;
     }
 
     if (country.length) {

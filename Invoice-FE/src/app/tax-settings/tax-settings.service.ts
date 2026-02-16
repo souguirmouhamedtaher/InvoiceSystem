@@ -9,13 +9,16 @@ import { TaxSetting } from './tax-settings.model';
 export class TaxSettingsService {
   private http = inject(HttpClient);
 
-  getActiveTaxSettings(): Observable<TaxSetting[]> {
+  getActiveTaxSettings(companyId: string): Observable<TaxSetting[]> {
     return this.http
-      .get<ApiResponse<TaxSetting[]>>(`${environment.apiBaseUrl}/tax-settings/active`)
+      .get<ApiResponse<TaxSetting[]>>(`${environment.apiBaseUrl}/tax-settings/active`, {
+        params: { companyId },
+      })
       .pipe(map((response) => response.data));
   }
 
   createTaxSetting(payload: {
+    companyId: string;
     name: string;
     taxType: 'TVA' | 'RE';
     taxprice: number;

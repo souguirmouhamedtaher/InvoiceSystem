@@ -34,6 +34,7 @@
 .loading {
   text-align: center;
   padding: 3rem 2rem;
+  pointer-events: none;
 
   .spinner {
     width: 50px;
@@ -80,6 +81,7 @@
   grid-template-rows: auto 1fr auto;
   gap: 1.5rem;
   padding: 2rem;
+  margin: 0;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.5), rgba(30, 41, 59, 0.5));
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 16px;
@@ -90,6 +92,13 @@
   font-family: inherit;
   font-size: inherit;
   width: 100%;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  user-select: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
 
   &:hover {
     border-color: rgba(94, 234, 212, 0.5);
@@ -160,6 +169,20 @@
   }
 }
 
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.3);
+
+  p {
+    color: rgba(226, 232, 240, 0.9);
+    font-size: 1.1rem;
+    margin: 0 0 1.5rem;
+  }
+}
+
 .create-section {
   display: flex;
   justify-content: center;
@@ -168,8 +191,9 @@
 }
 
 .create-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
   padding: 1rem 2rem;
   background: linear-gradient(135deg, #5eead4, #2dd4bf);

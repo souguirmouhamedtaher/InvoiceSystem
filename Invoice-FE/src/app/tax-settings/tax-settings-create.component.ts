@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TaxSettingsService } from './tax-settings.service';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-tax-settings-create',
@@ -16,6 +17,7 @@ export class TaxSettingsCreateComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   private fb = inject(FormBuilder);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -38,11 +40,18 @@ export class TaxSettingsCreateComponent {
       return;
     }
 
+    const companyId = this.companySwitcher.currentCompanyId();
+    if (!companyId) {
+      this.errorMessage.set('Selectionnez une societe avant de creer une taxe.');
+      return;
+    }
+
     const value = this.form.value;
 
     this.saving.set(true);
     this.taxSettingsService
       .createTaxSetting({
+        companyId,
         name: value.name || '',
         taxType: (value.taxType || 'TVA') as 'TVA' | 'RE',
         taxprice: Number(value.taxprice),

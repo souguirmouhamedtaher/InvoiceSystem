@@ -4,8 +4,8 @@
     <h1>{{ invoice()?.invoiceNumber }}</h1>
     <p class="subtitle">
       {{ invoice()?.invoiceType === 'buying'
-        ? (invoice()?.supplierId?.companyname || 'Fournisseur inconnu')
-        : (invoice()?.clientId?.companyname || 'Client inconnu') }}
+        ? (invoice()?.supplierId?.name || 'Fournisseur inconnu')
+        : (invoice()?.clientId?.name || 'Client inconnu') }}
     </p>
   </header>
 

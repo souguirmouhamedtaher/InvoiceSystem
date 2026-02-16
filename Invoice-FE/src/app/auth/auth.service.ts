@@ -29,9 +29,12 @@ export class AuthService {
 
   login(payload: LoginPayload): Observable<void> {
     return this.http
-      .post<ApiResponse<AuthTokens>>(`${environment.apiBaseUrl}/auth/login`, payload)
+      .post<ApiResponse<AuthTokens> | AuthTokens>(`${environment.apiBaseUrl}/auth/login`, payload)
       .pipe(
-        tap((response) => this.storeTokens(response.data)),
+        tap((response: any) => {
+          const tokens = response?.data ?? response;
+          if (tokens?.accessToken) this.storeTokens({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken ?? '' });
+        }),
         map(() => void 0)
       );
   }
@@ -55,6 +58,35 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return isPlatformBrowser(this.platformId) && !!localStorage.getItem('accessToken');
+  }
+
+  /** True if the current user has the super_admin role (from JWT). */
+  isSuperAdmin(): boolean {
+    const token = this.getAccessToken();
+    if (!token) return false;
+    try {
+      const payload = this.decodeJwtPayload(token);
+      const roles: unknown = payload?.['roles'];
+      if (!Array.isArray(roles)) return false;
+      return roles.some(
+        (r) => String(r).toLowerCase() === 'super_admin' || String(r).toLowerCase() === 'superadmin'
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  private decodeJwtPayload(token: string): Record<string, unknown> | null {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(json) as Record<string, unknown>;
   }
 
   getAccessToken(): string | null {
@@ -86,8 +118,14 @@ export class AuthService {
       : undefined;
 
     return this.http
-      .post<ApiResponse<AuthTokens>>(`${environment.apiBaseUrl}/auth/refresh`, {}, { headers })
-      .pipe(tap((response) => this.storeTokens(response.data)), map((response) => response.data));
+      .post<ApiResponse<AuthTokens> | AuthTokens>(`${environment.apiBaseUrl}/auth/refresh`, {}, { headers })
+      .pipe(
+        tap((response: any) => {
+          const tokens = response?.data ?? response;
+          if (tokens?.accessToken) this.storeTokens({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken ?? '' });
+        }),
+        map((response: any) => response?.data ?? response)
+      );
   }
 
   forgotPassword(email: string, resetPassLink: string): Observable<void> {

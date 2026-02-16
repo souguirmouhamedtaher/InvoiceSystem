@@ -11,26 +11,7 @@
   <form class="filters" [formGroup]="form">
     <label class="field">
       <span>Recherche</span>
-      <input type="text" formControlName="search" placeholder="Nom, email, ville" />
-    </label>
-
-    <label class="field">
-      <span>Type</span>
-      <select formControlName="companyType">
-        <option value="all">Tous</option>
-        <option value="client">Client</option>
-        <option value="mycompany">Ma societe</option>
-      </select>
-    </label>
-
-    <label class="field">
-      <span>Ville</span>
-      <input type="text" formControlName="city" placeholder="Tunis" />
-    </label>
-
-    <label class="field">
-      <span>Pays</span>
-      <input type="text" formControlName="country" placeholder="Tunisie" />
+      <input type="text" formControlName="search" placeholder="Nom, email" />
     </label>
 
     <button class="ghost" type="button" (click)="resetFilters()">Reinitialiser</button>
@@ -43,14 +24,14 @@
     <article class="card" *ngFor="let client of clients()">
       <div class="card-header">
         <div>
-          <h3>{{ client.companyname }}</h3>
+          <h3>{{ client.name }}</h3>
           <p>{{ client.email }}</p>
         </div>
-        <span class="pill">{{ client.companyType }}</span>
       </div>
       <div class="card-body">
         <p>{{ client.address }}</p>
-        <p *ngIf="client.city || client.country">{{ client.city }} {{ client.country }}</p>
+        <p>{{ client.phone }}</p>
+        <p *ngIf="client.taxId">{{ client.taxId }}</p>
       </div>
       <a class="link" [routerLink]="['/clients', client._id]">Voir fiche</a>
     </article>

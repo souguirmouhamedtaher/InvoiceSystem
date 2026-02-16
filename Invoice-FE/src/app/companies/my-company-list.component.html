@@ -11,12 +11,12 @@
   <form class="filters" [formGroup]="form">
     <label class="field">
       <span>Recherche</span>
-      <input type="text" formControlName="search" placeholder="Nom, email, ville" />
+      <input type="text" formControlName="search" placeholder="Nom, email" />
     </label>
 
     <label class="field">
-      <span>Ville</span>
-      <input type="text" formControlName="city" placeholder="Tunis" />
+      <span>Region</span>
+      <input type="text" formControlName="region" placeholder="Tunis" />
     </label>
 
     <label class="field">
@@ -41,9 +41,8 @@
       </div>
       <div class="card-body">
         <p>{{ company.address }}</p>
-        <p *ngIf="company.city || company.country">{{ company.city }} {{ company.country }}</p>
+        <p *ngIf="company.region || company.country">{{ company.region }} {{ company.country }}</p>
       </div>
-      <a class="link" [routerLink]="['/clients', company._id]">Voir fiche</a>
     </article>
   </div>
 

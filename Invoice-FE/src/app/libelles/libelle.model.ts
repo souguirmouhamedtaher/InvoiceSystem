@@ -1,4 +1,5 @@
 export type CreateLibellePayload = {
+  companyId: string;
   name: string;
   description?: string;
   qte: number;
@@ -9,7 +10,7 @@ export type CreateLibellePayload = {
   amount_discount?: number;
   percentage_discount?: number;
   discountType?: 'amount' | 'percentage';
-  TexSettingsId: string;
+  TexSettingsId?: string;
 };
 
 export type Libelle = {

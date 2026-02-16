@@ -3,30 +3,30 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse } from '../core/api-response';
 import { environment } from '../../environments/environment';
-import { Client, ClientListResponse, CreateClientPayload, UpdateClientPayload } from './client.model';
+import { CreateSupplierPayload, Supplier, SupplierListResponse, UpdateSupplierPayload } from './supplier.model';
 
 @Injectable({ providedIn: 'root' })
-export class ClientService {
+export class SupplierService {
   private http = inject(HttpClient);
 
-  createClient(payload: CreateClientPayload): Observable<Client> {
+  createSupplier(payload: CreateSupplierPayload): Observable<Supplier> {
     return this.http
-      .post<ApiResponse<Client> | Client>(`${environment.apiBaseUrl}/clients`, payload)
+      .post<ApiResponse<Supplier> | Supplier>(`${environment.apiBaseUrl}/suppliers`, payload)
       .pipe(map((response: any) => response?.data ?? response));
   }
 
-  getClientById(id: string): Observable<Client> {
+  getSupplierById(id: string): Observable<Supplier> {
     return this.http
-      .get<ApiResponse<Client>>(`${environment.apiBaseUrl}/clients/${id}`)
+      .get<ApiResponse<Supplier>>(`${environment.apiBaseUrl}/suppliers/${id}`)
       .pipe(map((response) => response.data));
   }
 
-  getClients(params: {
+  getSuppliers(params: {
     companyId: string;
     page: number;
     limit: number;
     search?: string;
-  }): Observable<ClientListResponse> {
+  }): Observable<SupplierListResponse> {
     const query = new HttpParams({
       fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
         if (value === undefined || value === null || value === '') {
@@ -38,19 +38,19 @@ export class ClientService {
     });
 
     return this.http
-      .get<ApiResponse<ClientListResponse>>(`${environment.apiBaseUrl}/clients`, { params: query })
+      .get<ApiResponse<SupplierListResponse>>(`${environment.apiBaseUrl}/suppliers`, { params: query })
       .pipe(map((response) => response.data));
   }
 
-  updateClient(id: string, payload: UpdateClientPayload): Observable<Client> {
+  updateSupplier(id: string, payload: UpdateSupplierPayload): Observable<Supplier> {
     return this.http
-      .patch<ApiResponse<Client>>(`${environment.apiBaseUrl}/clients/${id}`, payload)
+      .patch<ApiResponse<Supplier>>(`${environment.apiBaseUrl}/suppliers/${id}`, payload)
       .pipe(map((response) => response.data));
   }
 
-  deleteClient(id: string): Observable<{ success: boolean }> {
+  deleteSupplier(id: string): Observable<{ success: boolean }> {
     return this.http
-      .delete<ApiResponse<{ success: boolean }>>(`${environment.apiBaseUrl}/clients/${id}`)
+      .delete<ApiResponse<{ success: boolean }>>(`${environment.apiBaseUrl}/suppliers/${id}`)
       .pipe(map((response) => response.data));
   }
 }

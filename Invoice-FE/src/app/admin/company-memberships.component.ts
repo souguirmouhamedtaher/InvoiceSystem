@@ -2,8 +2,8 @@ import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminService, CompanyMembership, CreateCompanyUserPayload } from './admin.service';
-import { ClientService } from '../clients/client.service';
-import { Client } from '../clients/client.model';
+import { CompanyService } from '../companies/company.service';
+import { Company } from '../companies/company.model';
 import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
@@ -37,8 +37,8 @@ import { CompanySwitcherService } from '../core/company-switcher.service';
               <label for="role">Role *</label>
               <select id="role" formControlName="role" required>
                 <option value="">Selectionnez un role</option>
-                <option value="MANAGER">Manager</option>
-                <option value="ACCOUNTANT">Comptable</option>
+                <option value="manager">Manager</option>
+                <option value="accountant">Comptable</option>
               </select>
             </div>
 
@@ -60,6 +60,13 @@ import { CompanySwitcherService } from '../core/company-switcher.service';
             <div class="form-group">
               <label for="phone">Telephone</label>
               <input type="tel" id="phone" formControlName="phone" placeholder="+212...">
+            </div>
+
+            <div class="form-group">
+              <label for="password">Mot de passe (connexion)</label>
+              <input type="password" id="password" formControlName="password" placeholder="Pour les nouveaux utilisateurs uniquement"
+                autocomplete="new-password">
+              <small class="hint">Optionnel. Si vide, un mot de passe sera généré et envoyé par email.</small>
             </div>
           </div>
 
@@ -109,7 +116,7 @@ import { CompanySwitcherService } from '../core/company-switcher.service';
               <td>{{ membership.userId.firstName }} {{ membership.userId.lastName }}</td>
               <td>{{ membership.userId.email }}</td>
               <td>{{ membership.companyId.companyname }}</td>
-              <td><span class="badge" [class.badge-manager]="membership.role === 'MANAGER'" [class.badge-accountant]="membership.role === 'ACCOUNTANT'">{{ membership.role }}</span></td>
+              <td><span class="badge" [class.badge-manager]="roleIsManager(membership.role)" [class.badge-accountant]="roleIsAccountant(membership.role)">{{ roleLabel(membership.role) }}</span></td>
               <td>{{ membership.createdAt | date:'short' }}</td>
               <td>
                 <button class="btn btn-danger btn-sm" (click)="deleteMembership(membership._id)">Supprimer</button>
@@ -128,12 +135,12 @@ import { CompanySwitcherService } from '../core/company-switcher.service';
 })
 export class CompanyMembershipsComponent implements OnInit {
   private adminService = inject(AdminService);
-  private clientService = inject(ClientService);
+  private companyService = inject(CompanyService);
   private fb = inject(FormBuilder);
   private companySwitcher = inject(CompanySwitcherService);
 
   protected memberships = signal<CompanyMembership[]>([]);
-  protected companies = signal<Client[]>([]);
+  protected companies = signal<Company[]>([]);
   protected loading = signal(false);
   protected saving = signal(false);
   protected showAddForm = signal(false);
@@ -145,6 +152,7 @@ export class CompanyMembershipsComponent implements OnInit {
     firstName: [''],
     lastName: [''],
     phone: [''],
+    password: [''],
     companyId: ['', Validators.required],
     role: ['', Validators.required],
   });
@@ -158,6 +166,7 @@ export class CompanyMembershipsComponent implements OnInit {
       const companyId = this.companySwitcher.currentCompanyId();
       if (companyId) {
         this.loadMemberships();
+        this.addMemberForm.patchValue({ companyId }, { emitEvent: false });
       }
     });
   }
@@ -165,27 +174,31 @@ export class CompanyMembershipsComponent implements OnInit {
   ngOnInit(): void {
     this.loadCompanies();
     this.loadMemberships();
-
-    this.filterForm.valueChanges.subscribe(() => {
-      this.loadMemberships();
-    });
+    const companyId = this.companySwitcher.currentCompanyId();
+    if (companyId) this.addMemberForm.patchValue({ companyId }, { emitEvent: false });
+    this.filterForm.valueChanges.subscribe(() => this.loadMemberships());
   }
 
   loadCompanies(): void {
-    this.clientService.getClients({ page: 1, limit: 1000, companyType: 'mycompany' }).subscribe({
+    this.companyService.getCompanies({ page: 1, limit: 1000 }).subscribe({
       next: (response) => {
-        this.companies.set(response.companies.filter((c: Client) => c.companyType === 'mycompany'));
+        this.companies.set(response.companies ?? []);
       },
       error: (err) => console.error('Failed to load companies:', err),
     });
   }
 
   loadMemberships(): void {
+    const companyId = this.companySwitcher.currentCompanyId() || this.filterForm.value.companyId || undefined;
+    if (!companyId) {
+      this.memberships.set([]);
+      this.loading.set(false);
+      return;
+    }
     this.loading.set(true);
     this.errorMessage.set(null);
-    const companyId = this.companySwitcher.currentCompanyId() || this.filterForm.value.companyId || undefined;
 
-    this.adminService.getCompanyMemberships(companyId).subscribe({
+    this.adminService.getCompanyMembers(companyId).subscribe({
       next: (response) => {
         const memberships = response?.memberships ?? [];
         this.memberships.set(memberships);
@@ -193,7 +206,7 @@ export class CompanyMembershipsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load memberships:', err);
-        this.errorMessage.set('Impossible de charger les membres.');
+        this.errorMessage.set(err?.error?.message || 'Impossible de charger les membres.');
         this.memberships.set([]);
         this.loading.set(false);
       },
@@ -202,18 +215,23 @@ export class CompanyMembershipsComponent implements OnInit {
 
   addMember(): void {
     if (this.addMemberForm.invalid) return;
+    const companyId = this.companySwitcher.currentCompanyId() || this.addMemberForm.value.companyId;
+    if (!companyId) {
+      this.errorMessage.set('Veuillez selectionner une societe.');
+      return;
+    }
 
     this.saving.set(true);
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    const payload: CreateCompanyUserPayload = this.addMemberForm.value as CreateCompanyUserPayload;
-
-    this.adminService.addCompanyUser(payload).subscribe({
+    const { companyId: _, ...rest } = this.addMemberForm.value as CreateCompanyUserPayload;
+    this.adminService.addCompanyMember(companyId, rest).subscribe({
       next: () => {
         this.successMessage.set('Membre ajoute avec succes!');
         this.saving.set(false);
-        this.addMemberForm.reset();
+        const currentCompanyId = this.companySwitcher.currentCompanyId() || '';
+        this.addMemberForm.reset({ companyId: currentCompanyId, email: '', firstName: '', lastName: '', phone: '', password: '', role: '' });
         this.loadMemberships();
         setTimeout(() => {
           this.showAddForm.set(false);
@@ -238,5 +256,18 @@ export class CompanyMembershipsComponent implements OnInit {
         alert('Erreur lors de la suppression: ' + (err.error?.message || 'Erreur inconnue'));
       },
     });
+  }
+
+  roleIsManager(role: string): boolean {
+    return (role || '').toLowerCase() === 'manager';
+  }
+
+  roleIsAccountant(role: string): boolean {
+    return (role || '').toLowerCase() === 'accountant';
+  }
+
+  roleLabel(role: string): string {
+    const r = (role || '').toLowerCase();
+    return r === 'manager' ? 'Manager' : r === 'accountant' ? 'Comptable' : role || '';
   }
 }

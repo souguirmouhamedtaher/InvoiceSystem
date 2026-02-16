@@ -12,8 +12,8 @@
     <div class="grid">
       <label class="field">
         <span>Raison sociale</span>
-        <input type="text" formControlName="companyname" placeholder="Ex: Atlas Distribution" />
-        <small *ngIf="form.get('companyname')?.touched && form.get('companyname')?.invalid">
+        <input type="text" formControlName="name" placeholder="Ex: Atlas Distribution" />
+        <small *ngIf="form.get('name')?.touched && form.get('name')?.invalid">
           Ce champ est obligatoire.
         </small>
       </label>
@@ -27,28 +27,10 @@
       </label>
 
       <label class="field">
-        <span>Email comptabilite</span>
-        <input type="email" formControlName="accountingEmail" placeholder="compta@fournisseur.com" />
-      </label>
-
-      <label class="field">
-        <span>Type fournisseur</span>
-        <input type="text" formControlName="supplierType" placeholder="Local, grossiste..." />
-      </label>
-
-      <label class="field">
-        <span>TVA incluse</span>
-        <select formControlName="vatIncluded">
-          <option [ngValue]="false">Non</option>
-          <option [ngValue]="true">Oui</option>
-        </select>
-      </label>
-
-      <label class="field">
         <span>Telephone(s)</span>
-        <input type="text" formControlName="phonesRaw" placeholder="+21612345678, +21698765432" />
-        <small *ngIf="form.get('phonesRaw')?.touched && form.get('phonesRaw')?.invalid">
-          Ajoutez au moins un numero.
+        <input type="text" formControlName="phone" placeholder="+21612345678" />
+        <small *ngIf="form.get('phone')?.touched && form.get('phone')?.invalid">
+          Ajoutez un numero valide.
         </small>
       </label>
 
@@ -61,13 +43,8 @@
       </label>
 
       <label class="field">
-        <span>Ville</span>
-        <input type="text" formControlName="city" placeholder="Tunis" />
-      </label>
-
-      <label class="field">
-        <span>Pays</span>
-        <input type="text" formControlName="country" placeholder="Tunisie" />
+        <span>Identifiant fiscal (optionnel)</span>
+        <input type="text" formControlName="taxId" placeholder="MF1234567" />
       </label>
     </div>
 
@@ -79,7 +56,7 @@
     <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 
     <div class="actions">
-      <button class="ghost" type="button" [disabled]="saving()" (click)="form.reset({ vatIncluded: false })">
+      <button class="ghost" type="button" [disabled]="saving()" (click)="form.reset()">
         Effacer
       </button>
       <button class="primary" type="submit" [disabled]="saving()">

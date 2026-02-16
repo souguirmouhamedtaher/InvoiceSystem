@@ -11,72 +11,82 @@
   </header>
 
   <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="form-errors" *ngIf="submitted() && (form.invalid || clientRequiredError() || supplierRequiredError() || lineErrors().length > 0)">
+      <p class="form-errors-title">Veuillez corriger les champs suivants :</p>
+      <ul>
+        <li *ngIf="form.get('username')?.invalid && form.get('username')?.touched">Contact : obligatoire (min. 2 caractères)</li>
+        <li *ngIf="form.get('dateInvoice')?.invalid && form.get('dateInvoice')?.touched">Date facture : obligatoire</li>
+        <li *ngIf="form.value.invoiceType !== 'buying' && clientRequiredError()">Client : sélectionnez un client</li>
+        <li *ngIf="form.value.invoiceType === 'buying' && supplierRequiredError()">Fournisseur : sélectionnez un fournisseur</li>
+        <li *ngIf="form.get('taxSettingsId')?.invalid && form.get('taxSettingsId')?.touched">Taxe (TVA) : obligatoire</li>
+        <li *ngIf="lineErrors().length">{{ lineErrors().length }} ligne(s) à corriger (désignation, quantité, prix HT)</li>
+      </ul>
+    </div>
+
     <div class="grid">
-      <label class="field">
-        <span>Contact</span>
+      <label class="field" [class.field-invalid]="form.get('username')?.invalid && form.get('username')?.touched">
+        <span>Contact <em>*</em></span>
         <input type="text" formControlName="username" placeholder="Nom du contact" />
+        <small class="field-error" *ngIf="form.get('username')?.touched && form.get('username')?.errors?.['required']">Ce champ est obligatoire.</small>
+        <small class="field-error" *ngIf="form.get('username')?.touched && form.get('username')?.errors?.['minlength']">Minimum 2 caractères.</small>
       </label>
 
-      <label class="field">
-        <span>Date facture</span>
+      <label class="field" [class.field-invalid]="form.get('dateInvoice')?.invalid && form.get('dateInvoice')?.touched">
+        <span>Date facture <em>*</em></span>
         <input type="date" formControlName="dateInvoice" />
+        <small class="field-error" *ngIf="form.get('dateInvoice')?.touched && form.get('dateInvoice')?.invalid">La date est obligatoire.</small>
       </label>
 
       <label class="field">
         <span>Type de facture</span>
-        <select formControlName="invoiceType">
+        <select formControlName="invoiceType" class="select-studio">
           <option value="selling">Vente (client)</option>
           <option value="buying">Achat (fournisseur)</option>
         </select>
       </label>
 
-      <label class="field" *ngIf="form.value.invoiceType !== 'buying'">
-        <span>Client</span>
-        <select formControlName="clientId">
-          <option value="">Selectionner</option>
-          <option *ngFor="let client of clients()" [value]="client._id">
-            {{ client.companyname }}
+      <label class="field" *ngIf="form.value.invoiceType !== 'buying'" [class.field-invalid]="clientRequiredError()">
+        <span>Client <em>*</em></span>
+        <select formControlName="clientId" class="select-studio">
+          <option value="">Sélectionner un client</option>
+          <option *ngFor="let client of clientsForSelect()" [value]="client._id">
+            {{ client.name }}
           </option>
         </select>
+        <small class="field-error" *ngIf="clientRequiredError()">Sélectionnez un client pour la facture de vente.</small>
       </label>
 
-      <label class="field" *ngIf="form.value.invoiceType === 'buying'">
-        <span>Fournisseur</span>
-        <select formControlName="supplierId">
-          <option value="">Selectionner</option>
+      <label class="field" *ngIf="form.value.invoiceType === 'buying'" [class.field-invalid]="supplierRequiredError()">
+        <span>Fournisseur <em>*</em></span>
+        <select formControlName="supplierId" class="select-studio">
+          <option value="">Sélectionner un fournisseur</option>
           <option *ngFor="let supplier of suppliers()" [value]="supplier._id">
-            {{ supplier.companyname }}
+            {{ supplier.name }}
           </option>
         </select>
-      </label>
-
-      <label class="field">
-        <span>Ma societe</span>
-        <select formControlName="mycompanyId">
-          <option value="">Selectionner</option>
-          <option *ngFor="let company of myCompanies()" [value]="company._id">
-            {{ company.companyname }}
-          </option>
-        </select>
+        <small class="field-error" *ngIf="supplierRequiredError()">Sélectionnez un fournisseur pour la facture d'achat.</small>
       </label>
 
       <label class="field" *ngIf="form.value.invoiceType !== 'buying'">
         <span>Type client</span>
-        <select formControlName="clientType">
+        <select formControlName="clientType" class="select-studio">
           <option value="national">National</option>
           <option value="international">International</option>
         </select>
       </label>
 
-      <label class="field">
-        <span>Mode de paiement</span>
-        <span>Taxe (TVA)</span>
-        <select formControlName="taxSettingsId">
-          <option value="">Selectionner</option>
+      <label class="field" [class.field-invalid]="form.get('taxSettingsId')?.invalid && form.get('taxSettingsId')?.touched">
+        <span>Taxe (TVA) <em>*</em></span>
+        <select formControlName="taxSettingsId" class="select-studio">
+          <option value="">Sélectionner une taxe</option>
           <option *ngFor="let tax of taxes()" [value]="tax._id">
             {{ tax.name }} ({{ tax.taxprice }}%)
           </option>
         </select>
+        <small class="field-error" *ngIf="form.get('taxSettingsId')?.touched && form.get('taxSettingsId')?.errors?.['required']">Sélectionnez une taxe (TVA).</small>
+        <small class="field-hint" *ngIf="taxes().length === 0 && !loading()">
+          <a routerLink="/tax-settings/new">Créer une taxe</a> pour pouvoir facturer.
+        </small>
       </label>
 
       <label class="field">
@@ -102,25 +112,29 @@
         <button class="ghost" type="button" (click)="addLine()">Ajouter une ligne</button>
       </div>
 
-      <div class="line" *ngFor="let line of lines.controls; let i = index" [formGroupName]="i">
-        <label class="field">
-          <span>Designation</span>
+      <div class="line" *ngFor="let line of lines.controls; let i = index" [formGroupName]="i" [class.line-invalid]="lineInvalid(i)">
+        <label class="field" [class.field-invalid]="line.get('name')?.invalid && line.get('name')?.touched">
+          <span>Désignation <em>*</em></span>
           <input type="text" formControlName="name" placeholder="Service" />
+          <small class="field-error" *ngIf="line.get('name')?.touched && line.get('name')?.errors?.['required']">Obligatoire.</small>
+          <small class="field-error" *ngIf="line.get('name')?.touched && line.get('name')?.errors?.['minlength']">Min. 2 caractères.</small>
         </label>
 
-        <label class="field">
-          <span>Quantite</span>
+        <label class="field" [class.field-invalid]="line.get('qte')?.invalid && line.get('qte')?.touched">
+          <span>Quantité <em>*</em></span>
           <input type="number" min="1" formControlName="qte" />
+          <small class="field-error" *ngIf="line.get('qte')?.touched && line.get('qte')?.invalid">Quantité min. 1.</small>
         </label>
 
-        <label class="field">
-          <span>Prix HT</span>
+        <label class="field" [class.field-invalid]="line.get('prixHT')?.invalid && line.get('prixHT')?.touched">
+          <span>Prix HT <em>*</em></span>
           <input type="number" min="0" step="0.01" formControlName="prixHT" />
+          <small class="field-error" *ngIf="line.get('prixHT')?.touched && line.get('prixHT')?.errors?.['required']">Obligatoire.</small>
         </label>
 
         <label class="field">
           <span>Type</span>
-          <select formControlName="productType">
+          <select formControlName="productType" class="select-studio">
             <option value="service">Service</option>
             <option value="product">Produit</option>
             <option value="donation">Don</option>
@@ -129,7 +143,7 @@
 
         <label class="field">
           <span>Unite</span>
-          <select formControlName="unity">
+          <select formControlName="unity" class="select-studio">
             <option value="article">Article</option>
             <option value="hours">Heures</option>
             <option value="day">Jour</option>
