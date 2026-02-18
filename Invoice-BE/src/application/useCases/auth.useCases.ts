@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { IDataServices, IHashService, IJwtService, IMailerService } from "../../domain/abstracts";
 import { User } from "../../domain/entities";
 import { TokenType } from "../../domain/enums/tokenType.enum";
-import { ResetPasswordMobileDto, SignUpDto, VerifPasswordMobileDto } from "../dtos";
+import { ResetPasswordMobileDto, SignUpDto, UpdateUserProfileDto, VerifPasswordMobileDto } from "../dtos";
 import { ForgotPasswordDto } from "../dtos/auth/forgotPassword.dto";
 import { LoginDto } from "../dtos/auth/login.dto";
 import { ResetPasswordDto } from "../dtos/auth/resetPassword.dto";
@@ -55,7 +55,8 @@ export class AuthUseCases {
         }
     
         delete user.password;
-        const tokens = await this.getTokens(user._id, user.role);
+        const userIdStr = user._id?.toString?.() ?? String(user._id);
+        const tokens = await this.getTokens(userIdStr, user.role);
         await this.updateRefreshToken(user._id, tokens.refreshToken);
         this.logger.log("Login operation success");
         return tokens;
@@ -199,6 +200,18 @@ export class AuthUseCases {
         );
         await this.dataService.user.update(id, {password:newPass});
         return "password changed succefully";
+    }
+
+    async updateProfile(id: string, payload: UpdateUserProfileDto): Promise<User> {
+        const user = await this.dataService.user.get(id);
+        if (!user) {
+            throw new NotFoundException("User not found.");
+        }
+
+        return this.dataService.user.update(id, {
+            phoneNumber: payload.phone,
+            updatedAt: new Date(),
+        });
     }
 
     /**

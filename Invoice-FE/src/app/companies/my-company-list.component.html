@@ -43,6 +43,9 @@
         <p>{{ company.address }}</p>
         <p *ngIf="company.region || company.country">{{ company.region }} {{ company.country }}</p>
       </div>
+      <div class="card-actions">
+        <a class="ghost" [routerLink]="['/my-companies', company._id, 'edit']">Modifier</a>
+      </div>
     </article>
   </div>
 

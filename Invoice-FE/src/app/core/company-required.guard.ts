@@ -29,7 +29,6 @@ export const companyRequiredGuard: CanActivateFn = () => {
       const currentId = companySwitcher.currentCompanyId();
       const hasAny = companySwitcher.availableMemberships().length > 0;
       if (currentId && hasAny) return of(true);
-      if (currentId && localStorage.getItem('selectedCompanyId')) return of(true);
       return of(router.createUrlTree(['/company-selector']));
     })
   );

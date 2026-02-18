@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InvoiceService } from './invoice.service';
-import { Invoice } from './invoice.model';
+import { Invoice, TtnSimulation } from './invoice.model';
 
 @Component({
   selector: 'app-invoice-detail',
@@ -22,6 +22,13 @@ export class InvoiceDetailComponent {
   protected readonly downloadingPdf = signal(false);
   protected readonly xmlError = signal<string | null>(null);
   protected readonly downloadingXml = signal(false);
+  protected readonly ttnSubmitting = signal(false);
+  protected readonly ttnError = signal<string | null>(null);
+  protected readonly ttnResult = signal<TtnSimulation | null>(null);
+  protected readonly ttnHistory = signal<TtnSimulation[]>([]);
+  protected readonly showXmlPreview = signal(false);
+  protected readonly previewXmlTitle = signal('');
+  protected readonly previewXmlContent = signal('');
 
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -47,7 +54,10 @@ export class InvoiceDetailComponent {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.invoiceService.getInvoiceById(id).subscribe({
-        next: (data) => this.invoice.set(data),
+        next: (data) => {
+          this.invoice.set(data);
+          this.loadTtnHistory(id);
+        },
         error: (err) => {
           const message = err?.error?.message || 'Impossible de charger la facture.';
           this.errorMessage.set(message);
@@ -56,6 +66,13 @@ export class InvoiceDetailComponent {
     } else {
       this.errorMessage.set('Facture introuvable.');
     }
+  }
+
+  private loadTtnHistory(id: string): void {
+    this.invoiceService.getTtnSimulationHistory(id).subscribe({
+      next: (data) => this.ttnHistory.set(data.simulations || []),
+      error: () => this.ttnHistory.set([]),
+    });
   }
 
   submitPayment(): void {
@@ -157,5 +174,69 @@ export class InvoiceDetailComponent {
         this.xmlError.set(message);
       },
     });
+  }
+
+  submitTtnSimulation(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.ttnError.set('Facture introuvable.');
+      return;
+    }
+
+    this.ttnError.set(null);
+    this.ttnSubmitting.set(true);
+
+    this.invoiceService.submitTtnSimulation(id).subscribe({
+      next: (result) => {
+        this.ttnResult.set(result);
+        this.ttnSubmitting.set(false);
+        this.loadTtnHistory(id);
+      },
+      error: (err) => {
+        this.ttnSubmitting.set(false);
+        const message = err?.error?.message || 'Impossible de soumettre a TTN.';
+        this.ttnError.set(message);
+      },
+    });
+  }
+
+  downloadSimulationXml(kind: 'request' | 'response', sim: TtnSimulation): void {
+    const xml = kind === 'request' ? sim.requestXml : sim.responseXml || '';
+    if (!xml) {
+      this.ttnError.set('XML indisponible pour cette simulation.');
+      return;
+    }
+
+    const ref = sim.reference || 'ttn-sim';
+    const suffix = kind === 'request' ? 'request' : 'response';
+    this.downloadTextFile(`${ref}-${suffix}.xml`, xml);
+  }
+
+  openSimulationPreview(kind: 'request' | 'response', sim: TtnSimulation): void {
+    const xml = kind === 'request' ? sim.requestXml : sim.responseXml || '';
+    if (!xml) {
+      this.ttnError.set('XML indisponible pour cette simulation.');
+      return;
+    }
+
+    const label = kind === 'request' ? 'Requete' : 'Reponse';
+    const ref = sim.reference || 'TTN-SIM';
+    this.previewXmlTitle.set(`${label} TTN - ${ref}`);
+    this.previewXmlContent.set(xml);
+    this.showXmlPreview.set(true);
+  }
+
+  closeSimulationPreview(): void {
+    this.showXmlPreview.set(false);
+  }
+
+  private downloadTextFile(filename: string, content: string): void {
+    const blob = new Blob([content], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 }

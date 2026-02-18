@@ -29,4 +29,9 @@ export class CreateCompanyUserDto {
     @IsOptional()
     @IsString()
     phone?: string;
+
+    @ApiPropertyOptional({ description: 'Password for new user login (only for new users; leave empty to generate and send by email)' })
+    @IsOptional()
+    @IsString()
+    password?: string;
 }

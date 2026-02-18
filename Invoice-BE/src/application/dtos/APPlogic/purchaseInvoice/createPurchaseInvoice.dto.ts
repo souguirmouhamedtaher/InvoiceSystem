@@ -11,6 +11,10 @@ export class CreatePurchaseInvoiceDto {
     @IsMongoId()
     companyId: string;
 
+    @ApiProperty({ description: 'Supplier ID (ObjectId reference)', example: '64b7c0f1a2b4c3d4e5f67891' })
+    @IsMongoId()
+    supplierId: string;
+
     @ApiProperty({ description: 'Date of the invoice', example: '2026-01-02' })
     @IsString()
     date: string;

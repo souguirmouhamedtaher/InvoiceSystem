@@ -1,8 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsEnum } from 'class-validator';
+import { IsMongoId, IsString, IsOptional, IsNumber, IsEnum } from 'class-validator';
 import { productType, unity, discountType } from 'src/domain/enums/libelle.enums';
 
 export class CreateLibelleDto {
+  @ApiProperty({ description: 'Company ID', example: '64b7c0f1a2b4c3d4e5f67890' })
+  @IsMongoId()
+  companyId: string;
   @ApiProperty({ description: 'Label or product name', example: 'Web development service' })
   @IsString()
   name: string;

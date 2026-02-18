@@ -10,7 +10,7 @@ import {
 
 
 } from "./models";
-import { Company, CompanyDocument } from './models';
+import { Company, CompanyDocument, Client, ClientDocument, Supplier, SupplierDocument } from './models';
 import { Invoice, InvoiceDocument } from './models';
 import { Libelle, LibelleDocument } from './models';
 import { TaxSettings, TaxSettingsDocument } from './models';
@@ -19,6 +19,7 @@ import { Employee, EmployeeDocument } from './models';
 import { Salary, SalaryDocument } from './models';
 import { CnssPayment, CnssPaymentDocument } from './models';
 import { TvaPayment, TvaPaymentDocument } from './models';
+import { TtnSimulation, TtnSimulationDocument } from './models';
 import { CompanyMembership, CompanyMembershipDocument } from './models';
 import { AuditLog, AuditLogDocument } from './models';
 import { MongoGenericRepository } from "./repositories/mongo.repository";
@@ -28,6 +29,8 @@ export class MongoDataServices
     user: MongoGenericRepository<User>;
     files: MongoGenericRepository<Files>;
     company: MongoGenericRepository<Company>;
+    client: MongoGenericRepository<Client>;
+    supplier: MongoGenericRepository<Supplier>;
     invoice: MongoGenericRepository<Invoice>;
     libelle: MongoGenericRepository<Libelle>;
     TaxSettings: MongoGenericRepository<TaxSettings>;
@@ -36,6 +39,7 @@ export class MongoDataServices
     salary: MongoGenericRepository<Salary>;
     cnssPayment: MongoGenericRepository<CnssPayment>;
     tvaPayment: MongoGenericRepository<TvaPayment>;
+    ttnSimulation: MongoGenericRepository<TtnSimulation>;
     companyMembership: MongoGenericRepository<CompanyMembership>;
     auditLog: MongoGenericRepository<AuditLog>;
 
@@ -45,6 +49,8 @@ export class MongoDataServices
         @InjectModel(User.name) private UserRepository: Model<UserDocument>,
         @InjectModel(Files.name) private FilesRepository: Model<FilesDocument>,
         @InjectModel(Company.name) private CompanyRepository: Model<CompanyDocument>,
+        @InjectModel(Client.name) private ClientRepository: Model<ClientDocument>,
+        @InjectModel(Supplier.name) private SupplierRepository: Model<SupplierDocument>,
         @InjectModel(Invoice.name) private InvoiceRepository: Model<InvoiceDocument>,
         @InjectModel(Libelle.name) private LibelleRepository: Model<LibelleDocument>,
         @InjectModel(TaxSettings.name) private TaxSettingsRepository: Model<TaxSettingsDocument>,
@@ -53,6 +59,7 @@ export class MongoDataServices
         @InjectModel(Salary.name) private SalaryRepository: Model<SalaryDocument>,
         @InjectModel(CnssPayment.name) private CnssPaymentRepository: Model<CnssPaymentDocument>,
         @InjectModel(TvaPayment.name) private TvaPaymentRepository: Model<TvaPaymentDocument>,
+        @InjectModel(TtnSimulation.name) private TtnSimulationRepository: Model<TtnSimulationDocument>,
         @InjectModel(CompanyMembership.name) private CompanyMembershipRepository: Model<CompanyMembershipDocument>,
         @InjectModel(AuditLog.name) private AuditLogRepository: Model<AuditLogDocument>,
     ) { }
@@ -63,17 +70,20 @@ export class MongoDataServices
         this.user = new MongoGenericRepository<User>(this.UserRepository);
         this.files = new MongoGenericRepository<Files>(this.FilesRepository, ["uploadedBy"]);
         this.company = new MongoGenericRepository<Company>(this.CompanyRepository);
+        this.client = new MongoGenericRepository<Client>(this.ClientRepository, ["companyId"]);
+        this.supplier = new MongoGenericRepository<Supplier>(this.SupplierRepository, ["companyId"]);
         this.invoice = new MongoGenericRepository<Invoice>(
             this.InvoiceRepository,
-            ["AdditionalTaxSettings", "Libelle", "clientId", "supplierId", "mycompanyId"]
+            ["AdditionalTaxSettings", "Libelle", "clientId", "companyId"]
         );
         this.libelle = new MongoGenericRepository<Libelle>(this.LibelleRepository, ["TaxSettingsId"]);
         this.TaxSettings = new MongoGenericRepository<TaxSettings>(this.TaxSettingsRepository);
-        this.purchaseInvoice = new MongoGenericRepository<PurchaseInvoice>(this.PurchaseInvoiceRepository, ["companyId"]);
+        this.purchaseInvoice = new MongoGenericRepository<PurchaseInvoice>(this.PurchaseInvoiceRepository, ["companyId", "supplierId"]);
         this.employee = new MongoGenericRepository<Employee>(this.EmployeeRepository, ["companyId"]);
         this.salary = new MongoGenericRepository<Salary>(this.SalaryRepository, ["employeeId"]);
         this.cnssPayment = new MongoGenericRepository<CnssPayment>(this.CnssPaymentRepository, ["employeeId"]);
         this.tvaPayment = new MongoGenericRepository<TvaPayment>(this.TvaPaymentRepository);
+        this.ttnSimulation = new MongoGenericRepository<TtnSimulation>(this.TtnSimulationRepository, ["invoiceId", "companyId", "userId"]);
         this.companyMembership = new MongoGenericRepository<CompanyMembership>(this.CompanyMembershipRepository, ["companyId", "userId"]);
         this.auditLog = new MongoGenericRepository<AuditLog>(this.AuditLogRepository, ["companyId", "userId"]);
     }

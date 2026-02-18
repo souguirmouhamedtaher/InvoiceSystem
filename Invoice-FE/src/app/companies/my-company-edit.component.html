@@ -1,0 +1,132 @@
+<section class="client-create">
+  <a routerLink="/my-companies" class="back-link">&larr; Retour a la liste</a>
+  <header class="page-header">
+    <div>
+      <p class="kicker">Ma societe</p>
+      <h1>Modifier la societe</h1>
+      <p class="subtitle">Mettez a jour les informations et coordonnees bancaires.</p>
+    </div>
+    <div class="badge">Proprietaire</div>
+  </header>
+
+  <div class="state" *ngIf="loading()">Chargement...</div>
+  <div class="state error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</div>
+
+  <form class="form-card" *ngIf="!loading()" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <label class="field">
+        <span>Raison sociale</span>
+        <input type="text" formControlName="companyname" placeholder="Ex: Studio Atlas" />
+        <small *ngIf="form.get('companyname')?.touched && form.get('companyname')?.invalid">
+          Ce champ est obligatoire.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Patente (identifiant fiscal)</span>
+        <input type="text" formControlName="Patente" placeholder="Ex: PTE123456" />
+      </label>
+
+      <label class="field">
+        <span>Email</span>
+        <input type="email" formControlName="email" placeholder="contact@entreprise.com" />
+        <small *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+          Entrez un email valide.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Telephone(s)</span>
+        <input type="text" formControlName="phonesRaw" placeholder="+21612345678, +21698765432" />
+        <small *ngIf="form.get('phonesRaw')?.touched && form.get('phonesRaw')?.invalid">
+          Ajoutez au moins un numero.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Adresse</span>
+        <input type="text" formControlName="address" placeholder="12 Avenue Habib Bourguiba" />
+        <small *ngIf="form.get('address')?.touched && form.get('address')?.invalid">
+          L'adresse est obligatoire.
+        </small>
+      </label>
+
+      <label class="field">
+        <span>Region</span>
+        <input type="text" formControlName="region" placeholder="Tunis" />
+      </label>
+
+      <label class="field">
+        <span>Pays</span>
+        <input type="text" formControlName="country" placeholder="Tunisie" />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Notes</span>
+      <textarea rows="3" formControlName="notes" placeholder="Notes internes"></textarea>
+    </label>
+
+    <h2 class="section-title">Coordonnees bancaires (Elfatoora)</h2>
+    <div class="grid">
+      <label class="field">
+        <span>Nom de la banque</span>
+        <input type="text" formControlName="bankName" placeholder="Banque de Tunisie" />
+      </label>
+
+      <label class="field">
+        <span>IBAN</span>
+        <input type="text" formControlName="bankIBAN" placeholder="TN..." />
+      </label>
+
+      <label class="field">
+        <span>RIB</span>
+        <input type="text" formControlName="bankRib" placeholder="123456789" />
+      </label>
+
+      <label class="field">
+        <span>BIC / SWIFT</span>
+        <input type="text" formControlName="bankBIC" placeholder="BDBTTNTT" />
+      </label>
+
+      <label class="field">
+        <span>Numero de compte (XML)</span>
+        <input type="text" formControlName="bankAccountNumber" placeholder="0120021241115530" />
+      </label>
+
+      <label class="field">
+        <span>Identifiant du titulaire (XML)</span>
+        <input type="text" formControlName="bankOwnerIdentifier" placeholder="1B" />
+      </label>
+
+      <label class="field">
+        <span>Code etablissement (XML)</span>
+        <input type="text" formControlName="bankInstitutionCode" placeholder="0760" />
+      </label>
+
+      <label class="field">
+        <span>Nom de l'etablissement (XML)</span>
+        <input type="text" formControlName="bankInstitutionName" placeholder="La poste" />
+      </label>
+
+      <label class="field">
+        <span>Code d'agence (XML)</span>
+        <input type="text" formControlName="bankBranchCode" placeholder="0760" />
+      </label>
+
+      <label class="field">
+        <span>Pays de la banque (XML)</span>
+        <input type="text" formControlName="bankCountry" placeholder="TN" />
+      </label>
+    </div>
+
+    <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
+
+    <div class="actions">
+      <button class="ghost" type="button" [disabled]="saving()" (click)="reloadCompany()">Recharger</button>
+      <button class="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Mise a jour...' : 'Enregistrer' }}
+      </button>
+    </div>
+  </form>
+</section>

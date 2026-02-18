@@ -2,14 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
-  IsBoolean,
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
-import { companyType } from 'src/domain/enums/company.enums';
 
 export class CreateCompanyDto {
   @ApiProperty({
@@ -33,11 +30,6 @@ export class CreateCompanyDto {
   @IsString()
   Patente?: string;
 
-  @ApiProperty({ description: 'Type of company', example: companyType.client })
-  @IsEnum(companyType)
-  @IsNotEmpty()
-  companyType: companyType;
-
   @ApiPropertyOptional({ description: 'Bank name', example: 'Banque de Tunisie' })
   @IsOptional()
   @IsString()
@@ -58,6 +50,36 @@ export class CreateCompanyDto {
   @IsString()
   bankBIC?: string;
 
+  @ApiPropertyOptional({ description: 'Bank account number (Elfatoora AccountNumber)', example: '0120021241115530' })
+  @IsOptional()
+  @IsString()
+  bankAccountNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Bank account owner identifier (Elfatoora OwnerIdentifier)', example: '1B' })
+  @IsOptional()
+  @IsString()
+  bankOwnerIdentifier?: string;
+
+  @ApiPropertyOptional({ description: 'Bank institution code (Elfatoora InstitutionIdentification nameCode)', example: '0760' })
+  @IsOptional()
+  @IsString()
+  bankInstitutionCode?: string;
+
+  @ApiPropertyOptional({ description: 'Bank institution name (Elfatoora InstitutionName)', example: 'La poste' })
+  @IsOptional()
+  @IsString()
+  bankInstitutionName?: string;
+
+  @ApiPropertyOptional({ description: 'Bank branch code (Elfatoora BranchIdentifier)', example: '0760' })
+  @IsOptional()
+  @IsString()
+  bankBranchCode?: string;
+
+  @ApiPropertyOptional({ description: 'Bank country code (ISO 3166-1)', example: 'TN' })
+  @IsOptional()
+  @IsString()
+  bankCountry?: string;
+
   @ApiProperty({ description: 'Primary contact email for the company', example: 'contact@acme.tn' })
   @IsEmail()
   @IsNotEmpty()
@@ -69,60 +91,20 @@ export class CreateCompanyDto {
   @IsString({ each: true })
   phones: string[];
 
-  @ApiPropertyOptional({ description: 'Responsible person name', example: 'Khaled Ben Ali' })
-  @IsOptional()
-  @IsString()
-  ResponsibleName?: string;
-
-  @ApiPropertyOptional({ description: 'Responsible person email', example: 'responsible@acme.tn' })
-  @IsOptional()
-  @IsString()
-  ResponsibleEmail?: string;
-
-  @ApiPropertyOptional({ description: 'Responsible person phone', example: '+21698765432' })
-  @IsOptional()
-  @IsString()
-  ResponsiblePhone?: string;
-
   @ApiProperty({ description: 'Address', example: '12 Avenue Habib Bourguiba' })
   @IsString()
   @IsNotEmpty()
   address: string;
 
-  @ApiPropertyOptional({ description: 'Company sector', example: 'IT' })
+  @ApiPropertyOptional({ description: 'Region', example: 'Tunis' })
   @IsOptional()
   @IsString()
-  companySector?: string;
-
-  @ApiPropertyOptional({ description: 'Company sub sector', example: 'Software' })
-  @IsOptional()
-  @IsString()
-  companySubSector?: string;
-
-  @ApiPropertyOptional({ description: 'Supplier type', example: 'local' })
-  @IsOptional()
-  @IsString()
-  supplierType?: string;
-
-  @ApiPropertyOptional({ description: 'Accounting email for supplier', example: 'accounting@acme.tn' })
-  @IsOptional()
-  @IsEmail()
-  accountingEmail?: string;
-
-  @ApiPropertyOptional({ description: 'VAT included for supplier invoices', example: true })
-  @IsOptional()
-  @IsBoolean()
-  vatIncluded?: boolean;
+  region?: string;
 
   @ApiPropertyOptional({ description: 'Country', example: 'Tunisia' })
   @IsOptional()
   @IsString()
   country?: string;
-
-  @ApiPropertyOptional({ description: 'City', example: 'Tunis' })
-  @IsOptional()
-  @IsString()
-  city?: string;
 
   @ApiPropertyOptional({ description: 'Notes about the company', example: 'Preferred supplier' })
   @IsOptional()

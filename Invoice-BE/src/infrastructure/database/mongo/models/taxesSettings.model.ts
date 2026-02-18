@@ -1,12 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { TaxType } from 'src/domain/enums/tax.enums';
+import { Company } from './company.model';
 
 export type TaxSettingsDocument = TaxSettings & Document;
 
 @Schema()
 export class TaxSettings {
     _id: Types.ObjectId
+
+    @Prop({ type: Types.ObjectId, ref: Company.name, required: true })
+    companyId: Company;
     
     @Prop()
     name : string;

@@ -92,3 +92,24 @@ export type InvoiceListResponse = {
   totalInvoices: number;
 };
 
+export type TtnSimulation = {
+  _id: string;
+  invoiceId: string | { _id: string };
+  companyId?: string | { _id: string; companyname?: string };
+  userId?: string | { _id: string; email?: string };
+  requestXml: string;
+  responseXml?: string;
+  status: 'ACCEPTED' | 'REJECTED';
+  reference?: string;
+  errors?: string[];
+  source?: string;
+  submittedAt?: string;
+  processedAt?: string;
+  durationMs?: number;
+  createdAt?: string;
+};
+
+export type TtnSimulationListResponse = {
+  simulations: TtnSimulation[];
+};
+

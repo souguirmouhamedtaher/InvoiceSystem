@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -15,6 +16,7 @@ import { CreateLibelleDto, UpdateLibelleDto } from '../../application/dtos';
 import { Libelle } from '../../domain/entities';
 import { AccessTokenGuard } from '../guards/accessToken.guard';
 import { LibelleFactory } from '../../application/factoryMapper';
+import { UserDecorator } from '../decorators/getUser.decorator';
 
 @ApiTags('Facturation|Libelle')
 @Controller('libelle')
@@ -28,8 +30,8 @@ export class LibelleController {
     @Post()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new libelle with automatic price calculations' })
-    async createLibelle(@Body() createLibelleDto: CreateLibelleDto): Promise<Libelle> {
-        return this.libelleUseCases.createLibelle(createLibelleDto);
+    async createLibelle(@UserDecorator() user, @Body() createLibelleDto: CreateLibelleDto): Promise<Libelle> {
+        return this.libelleUseCases.createLibelle(user, createLibelleDto);
     }
 
     @Post('calculate')
@@ -38,7 +40,7 @@ export class LibelleController {
         summary: 'Calculate libelle prices WITHOUT creating it', 
         description: 'Use this endpoint to preview price calculations (prixTTC, finalprixHT, finalprixTTC) before creating the libelle. Returns calculated values only.'
     })
-    async calculateLibellePrices(@Body() createLibelleDto: CreateLibelleDto): Promise<{
+    async calculateLibellePrices(@UserDecorator() user, @Body() createLibelleDto: CreateLibelleDto): Promise<{
         name: string;
         qte: number;
         prixHT: string;
@@ -55,12 +57,21 @@ export class LibelleController {
             taxAmount: string;
         };
     }> {
+        if (!createLibelleDto.companyId) {
+            throw new BadRequestException('companyId is required to calculate libelle prices.');
+        }
+
+        await this.libelleUseCases.assertCompanyAccess(user, createLibelleDto.companyId);
+
         // Get tax settings to calculate prices
         let taxprice = 0;
         let taxSettings = null;
         if (createLibelleDto.TexSettingsId) {
             taxSettings = await this.libelleUseCases['dataService'].TaxSettings.get(createLibelleDto.TexSettingsId);
             if (taxSettings) {
+                if (taxSettings.companyId?.toString() !== createLibelleDto.companyId) {
+                    throw new BadRequestException('Tax settings does not belong to the provided companyId.');
+                }
                 taxprice = taxSettings.taxprice;
             }
         }
@@ -98,35 +109,41 @@ export class LibelleController {
     @ApiQuery({ name: 'search', required: false, type: String, description: 'Search in libelle name, description' })
     @ApiQuery({ name: 'productType', required: false, type: String, description: 'Filter by product type (product/service)' })
     @ApiQuery({ name: 'unity', required: false, type: String, description: 'Filter by unity (kg/hours/day/article)' })
-    async getAllLibelles(@Query() query): Promise<{ libelles: Libelle[]; totalLibelles: number }> {
+    @ApiQuery({ name: 'companyId', required: true, type: String, description: 'Filter by companyId' })
+    async getAllLibelles(@UserDecorator() user, @Query() query): Promise<{ libelles: Libelle[]; totalLibelles: number }> {
         const page = parseInt(query.page, 10) || 1;
         const limit = parseInt(query.limit, 10) || 20;
 
+        if (!query.companyId) {
+            throw new BadRequestException('companyId is required to list libelles.');
+        }
+
         const { page: _, limit: __, ...search } = query;
 
-        return await this.libelleUseCases.getAllLibelles(page, limit, search);
+        return await this.libelleUseCases.getAllLibelles(user, page, limit, search);
     }
 
     @Get(':id')
     @ApiBearerAuth()
-    async getLibelleById(@Param('id') id: string): Promise<Libelle> {
-        return this.libelleUseCases.getLibelleById(id);
+    async getLibelleById(@UserDecorator() user, @Param('id') id: string): Promise<Libelle> {
+        return this.libelleUseCases.getLibelleById(user, id);
     }
 
     @Patch(':id')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Update a libelle with automatic price recalculation' })
     async updateLibelle(
+        @UserDecorator() user,
         @Param('id') id: string,
         @Body() updateLibelleDto: UpdateLibelleDto
     ): Promise<Libelle> {
-        return this.libelleUseCases.updateLibelle(id, updateLibelleDto);
+        return this.libelleUseCases.updateLibelle(user, id, updateLibelleDto);
     }
 
     @Delete(':id')
     @ApiBearerAuth()
-    async deleteLibelle(@Param('id') id: string): Promise<{ success: boolean }> {
-        const result = await this.libelleUseCases.deleteLibelle(id);
+    async deleteLibelle(@UserDecorator() user, @Param('id') id: string): Promise<{ success: boolean }> {
+        const result = await this.libelleUseCases.deleteLibelle(user, id);
         return { success: result };
     }
 }

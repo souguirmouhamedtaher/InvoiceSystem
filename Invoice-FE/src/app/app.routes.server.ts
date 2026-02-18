@@ -22,6 +22,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'profile',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'dashboard',
     renderMode: RenderMode.Server,
   },
@@ -47,6 +51,10 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'my-companies/new',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'my-companies/:id/edit',
     renderMode: RenderMode.Server,
   },
   {

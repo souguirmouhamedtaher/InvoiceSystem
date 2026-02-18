@@ -44,6 +44,12 @@ export const routes: Routes = [
 		loadComponent: () => import('./auth').then((m) => m.ResetPasswordComponent),
 	},
 	{
+		path: 'profile',
+		canActivate: [authGuard],
+		loadComponent: () =>
+			import('./profile/profile.component').then((m) => m.ProfileComponent),
+	},
+	{
 		path: 'clients/new',
 		canActivate: [authGuard, companyRequiredGuard],
 		loadComponent: () =>
@@ -72,6 +78,12 @@ export const routes: Routes = [
 		canActivate: [authGuard, superAdminGuard],
 		loadComponent: () =>
 			import('./companies/my-company-create.component').then((m) => m.MyCompanyCreateComponent),
+	},
+	{
+		path: 'my-companies/:id/edit',
+		canActivate: [authGuard, superAdminGuard],
+		loadComponent: () =>
+			import('./companies/my-company-edit.component').then((m) => m.MyCompanyEditComponent),
 	},
 	{
 		path: 'tax-settings/new',

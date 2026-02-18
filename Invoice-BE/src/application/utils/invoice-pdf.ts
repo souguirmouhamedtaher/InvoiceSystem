@@ -203,7 +203,7 @@ export const buildInvoicePdfBuffer = async (params: {
   const template = fs.readFileSync(templatePath, 'utf8');
   const compileTemplate = Handlebars.compile(template);
 
-  const mycompany = invoice.mycompanyId || {};
+  const mycompany = (invoice as any).companyId || {};
   const bankDetails = {
     bankName: mycompany.bankName || null,
     bankRib: mycompany.bankRib || null,

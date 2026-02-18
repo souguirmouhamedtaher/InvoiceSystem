@@ -45,16 +45,18 @@ export class AnalysisController {
     @Get('cash-dashboard')
     @ApiOperation({
         summary: 'Get cash dashboard totals',
-        description: 'Aggregates sales, purchases, VAT, salaries, CNSS, and cash balance by month.'
+        description: 'Aggregates sales, purchases, VAT, salaries, CNSS, and cash balance by month. Pass companyId to scope by company.'
     })
     @ApiQuery({ name: 'year', required: false, type: Number, description: 'Filter by year (e.g. 2025)' })
     @ApiQuery({ name: 'month', required: false, type: Number, description: 'Filter by month (1-12)' })
+    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Scope to this company (my company ID)' })
     async getCashDashboard(
         @Query('year') year?: string,
         @Query('month') month?: string,
+        @Query('companyId') companyId?: string,
     ) {
         const y = year ? parseInt(year, 10) : undefined;
         const m = month ? parseInt(month, 10) : undefined;
-        return this.analysisUseCases.getCashDashboard(y, m);
+        return this.analysisUseCases.getCashDashboard(y, m, companyId || undefined);
     }
 }

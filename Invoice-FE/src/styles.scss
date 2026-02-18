@@ -35,6 +35,64 @@ main {
   animation: fade-up 0.6s ease-out;
 }
 
+label.field,
+label.label-help-target {
+  position: relative;
+}
+
+label.field span,
+label.label-help-target span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+label.field .label-help,
+label.label-help-target .label-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #0f172a;
+  background: rgba(94, 234, 212, 0.65);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  cursor: help;
+  transform: translateY(-1px);
+}
+
+label.field[data-help]::after,
+label.label-help-target[data-help]::after {
+  content: attr(data-help);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 6px;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  color: #f8fafc;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  width: max-content;
+  max-width: 260px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35);
+}
+
+label.field:hover::after,
+label.label-help-target:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;

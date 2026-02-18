@@ -20,6 +20,11 @@
       </label>
 
       <label class="field">
+        <span>Patente (identifiant fiscal)</span>
+        <input type="text" formControlName="Patente" placeholder="Ex: PTE123456" />
+      </label>
+
+      <label class="field">
         <span>Email</span>
         <input type="email" formControlName="email" placeholder="contact@entreprise.com" />
         <small *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
@@ -58,6 +63,59 @@
       <span>Notes</span>
       <textarea rows="3" formControlName="notes" placeholder="Notes internes"></textarea>
     </label>
+
+    <h2 class="section-title">Coordonnees bancaires (Elfatoora)</h2>
+    <div class="grid">
+      <label class="field">
+        <span>Nom de la banque</span>
+        <input type="text" formControlName="bankName" placeholder="Banque de Tunisie" />
+      </label>
+
+      <label class="field">
+        <span>IBAN</span>
+        <input type="text" formControlName="bankIBAN" placeholder="TN..." />
+      </label>
+
+      <label class="field">
+        <span>RIB</span>
+        <input type="text" formControlName="bankRib" placeholder="123456789" />
+      </label>
+
+      <label class="field">
+        <span>BIC / SWIFT</span>
+        <input type="text" formControlName="bankBIC" placeholder="BDBTTNTT" />
+      </label>
+
+      <label class="field">
+        <span>Numero de compte (XML)</span>
+        <input type="text" formControlName="bankAccountNumber" placeholder="0120021241115530" />
+      </label>
+
+      <label class="field">
+        <span>Identifiant du titulaire (XML)</span>
+        <input type="text" formControlName="bankOwnerIdentifier" placeholder="1B" />
+      </label>
+
+      <label class="field">
+        <span>Code etablissement (XML)</span>
+        <input type="text" formControlName="bankInstitutionCode" placeholder="0760" />
+      </label>
+
+      <label class="field">
+        <span>Nom de l'etablissement (XML)</span>
+        <input type="text" formControlName="bankInstitutionName" placeholder="La poste" />
+      </label>
+
+      <label class="field">
+        <span>Code d'agence (XML)</span>
+        <input type="text" formControlName="bankBranchCode" placeholder="0760" />
+      </label>
+
+      <label class="field">
+        <span>Pays de la banque (XML)</span>
+        <input type="text" formControlName="bankCountry" placeholder="TN" />
+      </label>
+    </div>
 
     <div class="error" *ngIf="errorMessage()">{{ errorMessage() }}</div>
 

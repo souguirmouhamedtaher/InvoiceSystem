@@ -26,6 +26,7 @@
         <div>
           <h3>{{ payment.month }}</h3>
           <p>Date: {{ payment.paymentDate }}</p>
+          <p *ngIf="payment.paymentType">Mode: {{ payment.paymentType }}</p>
         </div>
         <span class="pill">{{ payment.amount | number: '1.2-2' }}</span>
       </div>

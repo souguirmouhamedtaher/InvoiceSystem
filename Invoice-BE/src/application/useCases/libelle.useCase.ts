@@ -1,8 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
 import { Libelle, TaxSettings } from 'src/domain/entities';
 import { CreateLibelleDto, UpdateLibelleDto } from '../dtos';
 import { LibelleFactory } from '../factoryMapper';
+import { Types } from 'mongoose';
+import { Role } from 'src/domain/enums/role.enums';
+import { CompanyRole } from 'src/domain/enums/companyRole.enums';
+
+type RequestUser = {
+  _id: string;
+  roles?: string[];
+};
 
 @Injectable()
 export class LibelleUseCases {
@@ -12,12 +20,20 @@ export class LibelleUseCases {
   ) {}
 
   async getAllLibelles(
+    user: RequestUser,
     page: number = 1,
     limit: number = 20,
     search?: { [key: string]: any }
   ): Promise<{ libelles: Libelle[]; totalLibelles: number }> {
     const query: any = { deletedAt: null };
     const orQueries: any[] = [];
+    const companyId = search?.companyId;
+
+    if (!companyId) {
+      throw new BadRequestException('companyId is required.');
+    }
+    await this.assertCompanyAccess(user, companyId);
+    query.companyId = new Types.ObjectId(companyId);
 
     if (search) {
       for (const [key, value] of Object.entries(search)) {
@@ -33,6 +49,8 @@ export class LibelleUseCases {
           query.productType = value;
         } else if (key === 'unity' && value) {
           query.unity = value;
+        } else if (key === 'companyId') {
+          // companyId already handled
         } else {
           query[key] = value;
         }
@@ -46,29 +64,44 @@ export class LibelleUseCases {
     return { libelles, totalLibelles };
   }
 
-  async getLibelleById(id: string): Promise<Libelle> {
+  async getLibelleById(user: RequestUser, id: string): Promise<Libelle> {
     const libelle = await this.dataService.libelle.get(id);
     if (!libelle) throw new NotFoundException('Libelle not found.');
+    const companyId = (libelle as any).companyId?._id ?? (libelle as any).companyId;
+    if (companyId) {
+      await this.assertCompanyAccess(user, companyId.toString());
+    }
     return libelle;
   }
 
-  async createLibelle(libelleToCreate: CreateLibelleDto): Promise<Libelle> {
+  async createLibelle(user: RequestUser, libelleToCreate: CreateLibelleDto): Promise<Libelle> {
+    await this.assertCompanyAccess(user, libelleToCreate.companyId);
     // Get tax settings to calculate prices correctly
     let taxprice = 0;
     if (libelleToCreate.TexSettingsId) {
       const taxSettings = await this.dataService.TaxSettings.get(libelleToCreate.TexSettingsId);
-      if (taxSettings) {
-        taxprice = taxSettings.taxprice;
+      if (!taxSettings) {
+        throw new NotFoundException('Tax settings not found.');
       }
+      if (String((taxSettings as any).companyId) !== String(libelleToCreate.companyId)) {
+        throw new BadRequestException('Tax settings do not belong to this company.');
+      }
+      taxprice = taxSettings.taxprice;
     }
 
     const libelle = this.libelleFactory.createLibelle(libelleToCreate, taxprice);
     return await this.dataService.libelle.create(libelle);
   }
 
-  async updateLibelle(id: string, libelleToUpdate: UpdateLibelleDto): Promise<Libelle> {
+  async updateLibelle(user: RequestUser, id: string, libelleToUpdate: UpdateLibelleDto): Promise<Libelle> {
     const existingLibelle = await this.dataService.libelle.get(id);
     if (!existingLibelle) throw new NotFoundException('Libelle not found.');
+
+    const existingCompanyId = typeof existingLibelle.companyId === 'object'
+      ? (existingLibelle.companyId as any)?._id?.toString?.() || existingLibelle.companyId.toString()
+      : String(existingLibelle.companyId);
+
+    await this.assertCompanyAccess(user, existingCompanyId);
 
     // Get tax settings to recalculate prices if needed
     let taxprice = 0;
@@ -85,9 +118,13 @@ export class LibelleUseCases {
     
     if (taxSettingsIdString) {
       const taxSettings = await this.dataService.TaxSettings.get(taxSettingsIdString);
-      if (taxSettings) {
-        taxprice = taxSettings.taxprice;
+      if (!taxSettings) {
+        throw new NotFoundException('Tax settings not found.');
       }
+      if (String((taxSettings as any).companyId) !== String(existingCompanyId)) {
+        throw new BadRequestException('Tax settings do not belong to this company.');
+      }
+      taxprice = taxSettings.taxprice;
     }
 
     // Merge existing libelle data with update data for recalculation
@@ -106,11 +143,51 @@ export class LibelleUseCases {
     return await this.dataService.libelle.update(id, libelle);
   }
 
-  async deleteLibelle(id: string): Promise<boolean> {
+  async deleteLibelle(user: RequestUser, id: string): Promise<boolean> {
     const libelle = await this.dataService.libelle.get(id);
     if (!libelle) throw new NotFoundException('Libelle not found.');
 
+    const companyId = (libelle as any).companyId?._id ?? (libelle as any).companyId;
+    if (companyId) {
+      await this.assertCompanyAccess(user, companyId.toString());
+    }
+
     return await this.dataService.libelle.delete(id);
+  }
+
+  private isAdmin(roles?: string[]): boolean {
+    return roles?.includes(Role.SUPERADMIN) ?? false;
+  }
+
+  async assertCompanyAccess(user: RequestUser, companyId: string): Promise<void> {
+    if (this.isAdmin(user.roles)) return;
+
+    const owned = await this.dataService.company.findAllByAttributeWithFilter(
+      { _id: new Types.ObjectId(companyId), userId: new Types.ObjectId(user._id) },
+      1,
+      1
+    );
+
+    if (owned?.length) return;
+
+    const membership = await this.dataService.companyMembership.findAllByAttributeWithFilter(
+      {
+        deletedAt: null,
+        userId: new Types.ObjectId(user._id),
+        companyId: new Types.ObjectId(companyId),
+      },
+      1,
+      1
+    );
+
+    if (!membership?.length) {
+      throw new ForbiddenException('Access denied.');
+    }
+
+    const role = (membership[0].role as string)?.toLowerCase?.() ?? membership[0].role;
+    if (role !== CompanyRole.ACCOUNTANT) {
+      throw new ForbiddenException('Insufficient role for this action.');
+    }
   }
 
   /**

@@ -3,6 +3,7 @@ import { Document, Types } from 'mongoose';
 import { TaxSettings } from './taxesSettings.model';
 import { discountType, productType, unity } from 'src/domain/enums/libelle.enums';
 import { Invoice } from './invoice.model';
+import { Company } from './company.model';
 
 
 export type LibelleDocument = Libelle & Document;
@@ -11,6 +12,9 @@ export type LibelleDocument = Libelle & Document;
 @Schema()
 export class Libelle {
     _id: Types.ObjectId
+
+    @Prop({ type: Types.ObjectId, ref: Company.name, required: true })
+    companyId: Company;
     
     @Prop()
     name:string;

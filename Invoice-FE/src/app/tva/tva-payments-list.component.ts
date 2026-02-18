@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TvaPayment, TvaPaymentListResponse } from './tva-payments.model';
 import { TvaPaymentsService } from './tva-payments.service';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-tva-payments-list',
@@ -24,6 +25,7 @@ export class TvaPaymentsListComponent {
 
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private companySwitcher = inject(CompanySwitcherService);
 
   protected readonly form = this.fb.group({
     month: [''],
@@ -35,6 +37,13 @@ export class TvaPaymentsListComponent {
     this.form.valueChanges
       .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadPayments(1));
+
+    effect(() => {
+      const companyId = this.companySwitcher.currentCompanyId();
+      if (companyId) {
+        this.loadPayments(1);
+      }
+    });
   }
 
   get totalPages(): number {
@@ -62,8 +71,15 @@ export class TvaPaymentsListComponent {
     this.errorMessage.set(null);
 
     const month = this.form.value.month || undefined;
+    const companyId = this.companySwitcher.currentCompanyId();
 
-    this.paymentsService.getPayments({ page, limit: this.limit, month }).subscribe({
+    if (!companyId) {
+      this.loading.set(false);
+      this.errorMessage.set('Veuillez selectionner une entreprise.');
+      return;
+    }
+
+    this.paymentsService.getPayments({ page, limit: this.limit, month, companyId }).subscribe({
       next: (response: TvaPaymentListResponse) => {
         this.payments.set(response.payments);
         this.total.set(response.totalPayments);

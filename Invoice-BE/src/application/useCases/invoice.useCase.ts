@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
-import { Invoice, Libelle } from 'src/domain/entities';
-import { companyType } from 'src/domain/enums/company.enums';
+import { Invoice, Libelle, TtnSimulation } from 'src/domain/entities';
 import { invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
 import { AddInvoicePaymentDto, CreateInvoiceDto, UpdateInvoiceDto } from '../dtos';
 import { InvoiceFactory } from '../factoryMapper';
@@ -45,9 +44,9 @@ export class InvoiceUseCases {
           orQueries.push({ username: searchRegex });
           orQueries.push({ invoiceNumber: searchRegex });
           orQueries.push({ applicationName: searchRegex });
-        } else if ((key === 'companyId' || key === 'mycompanyId') && typeof value === 'string') {
+        } else if (key === 'companyId' && typeof value === 'string') {
           companyIdFilter = value;
-          query.mycompanyId = new Types.ObjectId(value);
+          query.companyId = new Types.ObjectId(value);
         } else if (key === 'clientType' && value) {
           query.clientType = value;
         } else if (key === 'invoiceStatus' && value) {
@@ -68,7 +67,7 @@ export class InvoiceUseCases {
       if (!companyIdFilter) {
         throw new ForbiddenException('companyId is required.');
       }
-      await this.assertCompanyMembership(user._id, companyIdFilter, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyIdFilter, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     const finalQuery = orQueries.length > 0 ? { $and: [query, { $or: orQueries }] } : query;
@@ -83,11 +82,11 @@ export class InvoiceUseCases {
     if (!invoice) throw new NotFoundException('Invoice not found.');
 
     if (!this.isAdmin(user.roles)) {
-      const companyId = invoice.mycompanyId?.toString();
+      const companyId = this.getInvoiceCompanyId(invoice);
       if (!companyId) {
         throw new ForbiddenException('Access denied');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     return invoice;
@@ -143,10 +142,10 @@ export class InvoiceUseCases {
     montantInternational?: number;
   }> {
     if (!this.isAdmin(user.roles)) {
-      if (!invoiceData.mycompanyId) {
-        throw new ForbiddenException('mycompanyId is required.');
+      if (!invoiceData.companyId) {
+        throw new ForbiddenException('companyId is required.');
       }
-      await this.assertCompanyMembership(user._id, invoiceData.mycompanyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, invoiceData.companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     // Validate that libelles are provided
@@ -197,33 +196,22 @@ export class InvoiceUseCases {
     const resolvedInvoiceType = invoiceToCreate.invoiceType ?? invoiceType.selling;
 
     if (!this.isAdmin(user.roles)) {
-      if (!invoiceToCreate.mycompanyId) {
-        throw new ForbiddenException('mycompanyId is required.');
+      if (!invoiceToCreate.companyId) {
+        throw new ForbiddenException('companyId is required.');
       }
-      await this.assertCompanyMembership(user._id, invoiceToCreate.mycompanyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, invoiceToCreate.companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     if (resolvedInvoiceType === invoiceType.selling && !invoiceToCreate.clientId) {
       throw new BadRequestException('Client is required for selling invoices.');
     }
 
-    if (resolvedInvoiceType === invoiceType.buying && !invoiceToCreate.supplierId) {
-      throw new BadRequestException('Supplier is required for buying invoices.');
-    }
-
     if (invoiceToCreate.clientId) {
-      const client = await this.dataService.company.get(invoiceToCreate.clientId);
+      const client = await this.dataService.client.get(invoiceToCreate.clientId);
       if (!client) throw new NotFoundException('Client not found.');
-      if (client.companyType !== companyType.client) {
-        throw new BadRequestException('Selected company is not a client.');
-      }
-    }
-
-    if (invoiceToCreate.supplierId) {
-      const supplier = await this.dataService.company.get(invoiceToCreate.supplierId);
-      if (!supplier) throw new NotFoundException('Supplier not found.');
-      if (supplier.companyType !== companyType.supplier) {
-        throw new BadRequestException('Selected company is not a supplier.');
+      const clientCompanyId = (client as any).companyId?._id ?? (client as any).companyId;
+      if (clientCompanyId && String(clientCompanyId) !== String(invoiceToCreate.companyId)) {
+        throw new BadRequestException('Client does not belong to this company.');
       }
     }
     // Validate that libelles are provided
@@ -278,6 +266,7 @@ export class InvoiceUseCases {
       totals
     );
 
+    (invoice as any).userId = new Types.ObjectId(user._id);
     return await this.dataService.invoice.create(invoice);
   }
 
@@ -286,11 +275,11 @@ export class InvoiceUseCases {
     if (!existingInvoice) throw new NotFoundException('Invoice not found.');
 
     if (!this.isAdmin(user.roles)) {
-      const companyId = existingInvoice.mycompanyId?.toString();
+      const companyId = this.getInvoiceCompanyId(existingInvoice);
       if (!companyId) {
         throw new ForbiddenException('Access denied');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     // If libelles are updated, recalculate totals
@@ -344,11 +333,11 @@ export class InvoiceUseCases {
     if (!invoice) throw new NotFoundException('Invoice not found.');
 
     if (!this.isAdmin(user.roles)) {
-      const companyId = invoice.mycompanyId?.toString();
+      const companyId = this.getInvoiceCompanyId(invoice);
       if (!companyId) {
         throw new ForbiddenException('Access denied');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     const totalTTC = Number(invoice.totalTTC || 0);
@@ -386,11 +375,11 @@ export class InvoiceUseCases {
     if (!invoice) throw new NotFoundException('Invoice not found.');
 
     if (!this.isAdmin(user.roles)) {
-      const companyId = invoice.mycompanyId?.toString();
+      const companyId = this.getInvoiceCompanyId(invoice);
       if (!companyId) {
         throw new ForbiddenException('Access denied');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     return await this.dataService.invoice.delete(id);
@@ -401,11 +390,11 @@ export class InvoiceUseCases {
     if (!invoice) throw new NotFoundException('Invoice not found.');
 
     if (!this.isAdmin(user.roles)) {
-      const companyId = invoice.mycompanyId?.toString();
+      const companyId = this.getInvoiceCompanyId(invoice);
       if (!companyId) {
         throw new ForbiddenException('Access denied');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     const vatMap = new Map<number, { base: number; tva: number }>();
@@ -445,10 +434,8 @@ export class InvoiceUseCases {
       totalTTC: parseFloat(invoice.totalTTC || '0'),
     };
 
-    const fromLabel = invoice.mycompanyId?.companyname || 'Ma societe';
-    const toLabel = invoice.invoiceType === invoiceType.buying
-      ? (invoice.supplierId?.companyname || 'Fournisseur')
-      : (invoice.clientId?.companyname || 'Client');
+    const fromLabel = (invoice as any).companyId?.companyname || 'Ma societe';
+    const toLabel = (invoice as any).clientId?.name || 'Client';
 
     return buildInvoicePdfBuffer({
       invoice,
@@ -464,18 +451,161 @@ export class InvoiceUseCases {
     if (!invoice) throw new NotFoundException('Invoice not found.');
 
     if (!this.isAdmin(user.roles)) {
-      const companyId = invoice.mycompanyId?.toString();
+      const companyId = this.getInvoiceCompanyId(invoice);
       if (!companyId) {
         throw new ForbiddenException('Access denied');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     return this.xmlGeneratorUseCases.generateInvoiceXml(invoice);
   }
 
+  async submitTtnSimulation(user: RequestUser, id: string): Promise<TtnSimulation> {
+    const invoice = await this.dataService.invoice.get(id);
+    if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    if (!this.isAdmin(user.roles)) {
+      const companyId = this.getInvoiceCompanyId(invoice);
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
+    }
+
+    const start = Date.now();
+    const xmlBuffer = await this.xmlGeneratorUseCases.generateInvoiceXml(invoice);
+    const requestXml = xmlBuffer.toString('utf-8');
+    const errors = this.validateInvoiceForTtn(invoice);
+    const status = errors.length ? 'REJECTED' : 'ACCEPTED';
+    const reference = status === 'ACCEPTED' ? this.generateTtnReference(invoice) : undefined;
+    const responseXml = this.buildTtnResponseXml(status, reference, errors);
+
+    const companyId = this.getInvoiceCompanyId(invoice);
+    if (!companyId) {
+      throw new BadRequestException('companyId is required for TTN simulation.');
+    }
+    const payload = {
+      invoiceId: new Types.ObjectId(invoice._id),
+      companyId: new Types.ObjectId(companyId),
+      userId: new Types.ObjectId(user._id),
+      requestXml,
+      responseXml,
+      status,
+      reference,
+      errors,
+      source: 'manual',
+      submittedAt: new Date(),
+      processedAt: new Date(),
+      durationMs: Date.now() - start,
+    } as any;
+
+    return await this.dataService.ttnSimulation.create(payload);
+  }
+
+  async getTtnSimulationHistory(user: RequestUser, id: string): Promise<{ simulations: TtnSimulation[] }> {
+    const invoice = await this.dataService.invoice.get(id);
+    if (!invoice) throw new NotFoundException('Invoice not found.');
+
+    if (!this.isAdmin(user.roles)) {
+      const companyId = this.getInvoiceCompanyId(invoice);
+      if (!companyId) {
+        throw new ForbiddenException('Access denied');
+      }
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
+    }
+
+    const filter = { invoiceId: new Types.ObjectId(invoice._id), deletedAt: null } as any;
+    const simulations = await this.dataService.ttnSimulation.findAllByAttributeWithFilter(
+      filter,
+      1,
+      50,
+      { createdAt: -1 }
+    );
+
+    return { simulations: simulations || [] };
+  }
+
   private isAdmin(roles?: string[]): boolean {
     return roles?.includes(Role.SUPERADMIN) ?? false;
+  }
+
+  private getInvoiceCompanyId(invoice: Invoice): string | undefined {
+    const value = (invoice as any).companyId;
+    if (value == null) return undefined;
+    const id = (typeof value === 'object' && value !== null && '_id' in value) ? (value._id ?? value) : value;
+    return id?.toString?.() ?? undefined;
+  }
+
+  private validateInvoiceForTtn(invoice: Invoice): string[] {
+    const errors: string[] = [];
+    const seller = (invoice as any).companyId;
+    const buyer = (invoice as any).clientId;
+    const payments = Array.isArray((invoice as any).payments) ? (invoice as any).payments : [];
+
+    if (!invoice.invoiceNumber) errors.push('Missing invoice number.');
+    if (!invoice.dateInvoice) errors.push('Missing invoice date.');
+    if (!seller) errors.push('Missing seller (company).');
+    if (seller && !seller.Patente) errors.push('Missing seller tax identifier (Patente).');
+    if (!buyer) errors.push('Missing buyer (client).');
+    if (buyer && !buyer.taxId && !buyer.Patente) errors.push('Missing buyer tax identifier.');
+    if (!Array.isArray(invoice.Libelle) || invoice.Libelle.length === 0) {
+      errors.push('Missing invoice lines.');
+    }
+    if (!invoice.totalTTC) errors.push('Missing total TTC.');
+    if (!invoice.totalHT) errors.push('Missing total HT.');
+
+    for (const payment of payments) {
+      if (!payment?.amount || Number(payment.amount) <= 0) {
+        errors.push('Payment amount must be greater than 0.');
+      }
+      if (!payment?.date) {
+        errors.push('Payment date is required.');
+      }
+      if (!payment?.paymentType) {
+        errors.push('Payment type is required.');
+      }
+      if (payment?.paymentType === 'bankTransfer') {
+        const accountNumber = seller?.bankAccountNumber || seller?.bankRib || seller?.bankIBAN;
+        if (!accountNumber) {
+          errors.push('Bank transfer requires company bank account details.');
+        }
+      }
+    }
+
+    return errors;
+  }
+
+  private generateTtnReference(invoice: Invoice): string {
+    const date = new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const shortId = String(invoice._id || '').slice(-6) || Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `TTN-SIM-${y}${m}${d}-${shortId}`;
+  }
+
+  private buildTtnResponseXml(status: string, reference?: string, errors?: string[]): string {
+    const safeErrors = Array.isArray(errors) ? errors : [];
+    const errorItems = safeErrors
+      .map((err) => `    <Error>${this.escapeXml(err)}</Error>`)
+      .join('\n');
+    const errorBlock = errorItems ? `\n  <Errors>\n${errorItems}\n  </Errors>` : '';
+
+    return `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<TTNResponse>\n` +
+      `  <Status>${this.escapeXml(status)}</Status>\n` +
+      `  <Reference>${this.escapeXml(reference || '')}</Reference>${errorBlock}\n` +
+      `</TTNResponse>`;
+  }
+
+  private escapeXml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   private async assertCompanyMembership(
@@ -483,6 +613,15 @@ export class InvoiceUseCases {
     companyId: string,
     allowedRoles: CompanyRole[]
   ): Promise<void> {
+    if (allowedRoles.includes(CompanyRole.OWNER)) {
+      const owned = await this.dataService.company.findAllByAttributeWithFilter(
+        { _id: new Types.ObjectId(companyId), userId: new Types.ObjectId(userId) },
+        1,
+        1
+      );
+      if (owned?.length) return;
+    }
+
     const membership = await this.dataService.companyMembership.findAllByAttributeWithFilter(
       {
         deletedAt: null,
@@ -497,7 +636,9 @@ export class InvoiceUseCases {
       throw new ForbiddenException('Access denied');
     }
 
-    if (allowedRoles.length && !allowedRoles.includes(membership[0].role)) {
+    const role = (membership[0].role as string)?.toLowerCase?.() ?? membership[0].role;
+    const rolesToCheck = allowedRoles.filter((r) => r !== CompanyRole.OWNER) as string[];
+    if (rolesToCheck.length && !rolesToCheck.includes(role)) {
       throw new ForbiddenException('Insufficient role for this action.');
     }
   }
@@ -514,14 +655,14 @@ export class InvoiceUseCases {
     const query: any = { deletedAt: null };
 
     if (companyId) {
-      query.mycompanyId = new Types.ObjectId(companyId);
+      query.companyId = new Types.ObjectId(companyId);
     }
 
     if (!isAdmin) {
       if (!companyId) {
         throw new ForbiddenException('companyId is required.');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     const allInvoices = await this.dataService.invoice.findAllByAttributeWithFilter(query, 1, 100000);
@@ -558,14 +699,14 @@ export class InvoiceUseCases {
     };
 
     if (companyId) {
-      query.mycompanyId = new Types.ObjectId(companyId);
+      query.companyId = new Types.ObjectId(companyId);
     }
 
     if (!isAdmin) {
       if (!companyId) {
         throw new ForbiddenException('companyId is required.');
       }
-      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.ACCOUNTANT]);
+      await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.ACCOUNTANT]);
     }
 
     return await this.dataService.invoice.findAllByAttributeWithFilter(query, 1, 1000, { createdAt: -1 });

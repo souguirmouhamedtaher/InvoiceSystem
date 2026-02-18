@@ -2,6 +2,7 @@ import { Base } from './base.entity';
 import { discountType, productType, unity } from '../enums/libelle.enums';
 
 export class Libelle extends Base {
+    companyId: any;
     name: string;
     description: string;
     qte: number;

@@ -32,6 +32,7 @@ export default () => ({
         user: process.env.MAILER_USER,
         password: process.env.MAILER_PASSWORD,
         sender: process.env.MAILER_SENDER,
+        sendgridApiKey: process.env.SENDGRID_API_KEY,
     },
      spaceObject: {
          endpoint: process.env.SPACE_ENDPOINT,

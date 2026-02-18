@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from './auth.service';
+import { CompanySwitcherService } from '../core/company-switcher.service';
 
 @Component({
   selector: 'app-login',
@@ -24,7 +25,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private companySwitcher: CompanySwitcherService
   ) {}
 
   submit(): void {
@@ -43,6 +45,7 @@ export class LoginComponent {
     this.loading.set(true);
     this.authService.login(payload).subscribe({
       next: () => {
+        this.companySwitcher.clearAll();
         this.loading.set(false);
         this.router.navigate(['/company-selector']);
       },

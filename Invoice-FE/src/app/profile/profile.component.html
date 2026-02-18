@@ -1,0 +1,71 @@
+<section class="profile-shell">
+  <div class="profile-header">
+    <div>
+      <p class="eyebrow">Compte</p>
+      <h1>Profil</h1>
+      <p class="subtitle">Mettez a jour votre numero de telephone et votre mot de passe.</p>
+    </div>
+    <div class="profile-meta" *ngIf="currentUser()">
+      <span class="meta-name">{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</span>
+      <span class="meta-email">{{ currentUser()?.email }}</span>
+    </div>
+  </div>
+
+  <div class="profile-grid">
+    <article class="card">
+      <h2>Telephone</h2>
+      <form [formGroup]="profileForm" (ngSubmit)="submitProfile()" class="form">
+        <label class="field">
+          <span>Numero de telephone</span>
+          <input type="tel" formControlName="phone" placeholder="+212..." />
+          <small *ngIf="profileForm.get('phone')?.touched && profileForm.get('phone')?.invalid">
+            Entrez un numero valide.
+          </small>
+        </label>
+
+        <div class="error" *ngIf="profileError()">{{ profileError() }}</div>
+        <div class="success" *ngIf="profileSuccess()">{{ profileSuccess() }}</div>
+
+        <button class="primary" type="submit" [disabled]="loadingProfile()">
+          {{ loadingProfile() ? 'Mise a jour...' : 'Enregistrer' }}
+        </button>
+      </form>
+    </article>
+
+    <article class="card">
+      <h2>Mot de passe</h2>
+      <form [formGroup]="passwordForm" (ngSubmit)="submitPassword()" class="form">
+        <label class="field">
+          <span>Mot de passe actuel</span>
+          <input type="password" formControlName="currentPassword" placeholder="********" />
+          <small *ngIf="passwordForm.get('currentPassword')?.touched && passwordForm.get('currentPassword')?.invalid">
+            Saisissez votre mot de passe actuel.
+          </small>
+        </label>
+
+        <label class="field">
+          <span>Nouveau mot de passe</span>
+          <input type="password" formControlName="newPassword" placeholder="Nouveau mot de passe" />
+          <small *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.invalid">
+            Minimum 6 caracteres.
+          </small>
+        </label>
+
+        <label class="field">
+          <span>Confirmer le mot de passe</span>
+          <input type="password" formControlName="confirmPassword" placeholder="Confirmer" />
+          <small *ngIf="passwordForm.get('confirmPassword')?.touched && passwordForm.get('confirmPassword')?.invalid">
+            Re-saisissez le nouveau mot de passe.
+          </small>
+        </label>
+
+        <div class="error" *ngIf="passwordError()">{{ passwordError() }}</div>
+        <div class="success" *ngIf="passwordSuccess()">{{ passwordSuccess() }}</div>
+
+        <button class="primary" type="submit" [disabled]="loadingPassword()">
+          {{ loadingPassword() ? 'Mise a jour...' : 'Changer le mot de passe' }}
+        </button>
+      </form>
+    </article>
+  </div>
+</section>

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TaxSettings } from 'src/domain/entities';
+import { Types } from 'mongoose';
 import { CreateTaxSettingsDto, UpdateTaxSettingsDto } from '../dtos';
 
 @Injectable()
@@ -7,6 +8,7 @@ export class TaxSettingsFactory {
   createTaxSettings(createTaxSettingsDto: CreateTaxSettingsDto): TaxSettings {
     const newTaxSettings = new TaxSettings();
 
+    newTaxSettings.companyId = new Types.ObjectId(createTaxSettingsDto.companyId);
     newTaxSettings.name = createTaxSettingsDto.name;
     newTaxSettings.taxType = createTaxSettingsDto.taxType;
     newTaxSettings.taxprice = createTaxSettingsDto.taxprice;

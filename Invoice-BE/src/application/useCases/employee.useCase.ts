@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
 import { Employee } from 'src/domain/entities';
-import { companyType } from 'src/domain/enums/company.enums';
 import { CreateEmployeeDto, ImportEmployeeCsvDto, UpdateEmployeeDto } from '../dtos';
 import { Types } from 'mongoose';
 import { CompanyRole } from 'src/domain/enums/companyRole.enums';
@@ -48,11 +47,16 @@ export class EmployeeUseCases {
             if (!companyIdFilter) {
                 throw new ForbiddenException('companyId is required.');
             }
-            await this.assertCompanyMembership(user._id, companyIdFilter, [CompanyRole.MANAGER, CompanyRole.ACCOUNTANT]);
+            await this.assertCompanyMembership(user._id, companyIdFilter, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         const finalQuery = orQueries.length > 0 ? { $and: [query, { $or: orQueries }] } : query;
-        const employees = await this.dataService.employee.findAllByAttributeWithFilter(finalQuery, page, limit);
+        const employees = await this.dataService.employee.findAllByAttributeWithFilter(
+            finalQuery,
+            page,
+            limit,
+            { createdAt: -1 }
+        );
         const totalEmployees = await this.dataService.employee.count(finalQuery);
 
         return { employees: employees || [], totalEmployees };
@@ -63,11 +67,11 @@ export class EmployeeUseCases {
         if (!employee) throw new NotFoundException('Employee not found.');
 
         if (!this.isAdmin(user.roles)) {
-            const companyId = employee.companyId?.toString();
+            const companyId = this.getEmployeeCompanyId(employee);
             if (!companyId) {
                 throw new ForbiddenException('Access denied');
             }
-            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.MANAGER, CompanyRole.ACCOUNTANT]);
+            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         return employee;
@@ -76,16 +80,14 @@ export class EmployeeUseCases {
     async createEmployee(user: RequestUser, payload: CreateEmployeeDto): Promise<Employee> {
         const company = await this.dataService.company.get(payload.companyId);
         if (!company) throw new NotFoundException('Company not found.');
-        if (company.companyType !== companyType.mycompany) {
-            throw new BadRequestException('Employee must belong to a mycompany.');
-        }
 
         if (!this.isAdmin(user.roles)) {
-            await this.assertCompanyMembership(user._id, payload.companyId, [CompanyRole.MANAGER]);
+            await this.assertCompanyMembership(user._id, payload.companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         const employee = {
             ...payload,
+            companyId: new Types.ObjectId(payload.companyId),
             userId: new Types.ObjectId(user._id),
             monthlyNetSalary: Number(payload.monthlyNetSalary || 0),
             cnssRatePercent: payload.cnssApplicable ? Number(payload.cnssRatePercent || 0) : 0,
@@ -99,22 +101,19 @@ export class EmployeeUseCases {
         if (!existing) throw new NotFoundException('Employee not found.');
 
         if (!this.isAdmin(user.roles)) {
-            const companyId = existing.companyId?.toString();
+            const companyId = this.getEmployeeCompanyId(existing);
             if (!companyId) {
                 throw new ForbiddenException('You do not have permission to update this employee.');
             }
-            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.MANAGER]);
+            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         if (payload.companyId) {
             const company = await this.dataService.company.get(payload.companyId);
             if (!company) throw new NotFoundException('Company not found.');
-            if (company.companyType !== companyType.mycompany) {
-                throw new BadRequestException('Employee must belong to a mycompany.');
-            }
 
             if (!this.isAdmin(user.roles)) {
-                await this.assertCompanyMembership(user._id, payload.companyId, [CompanyRole.MANAGER]);
+                await this.assertCompanyMembership(user._id, payload.companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
             }
         }
 
@@ -126,6 +125,10 @@ export class EmployeeUseCases {
             (payload as any).cnssRatePercent = 0;
         } else if (payload.cnssRatePercent !== undefined) {
             (payload as any).cnssRatePercent = Number(payload.cnssRatePercent || 0);
+        }
+
+        if (payload.companyId) {
+            (payload as any).companyId = new Types.ObjectId(payload.companyId);
         }
 
         return await this.dataService.employee.update(id, payload as any);
@@ -142,21 +145,22 @@ export class EmployeeUseCases {
 
         const isAdmin = this.isAdmin(user.roles);
         let employeeIds: Types.ObjectId[] = [];
+        let companyEmployees: Employee[] = [];
 
         if (companyId) {
             const company = await this.dataService.company.get(companyId);
             if (!company) throw new NotFoundException('Company not found.');
 
             if (!isAdmin) {
-                await this.assertCompanyMembership(user._id, companyId, [CompanyRole.MANAGER, CompanyRole.ACCOUNTANT]);
+                await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
             }
 
-            const companyEmployees = await this.dataService.employee.findAllByAttributeWithFilter(
+            companyEmployees = await this.dataService.employee.findAllByAttributeWithFilter(
                 { deletedAt: null, companyId: new Types.ObjectId(companyId) },
                 1,
                 100000
-            );
-            employeeIds = (companyEmployees || []).map(emp => emp._id);
+            ) || [];
+            employeeIds = companyEmployees.map(emp => emp._id);
         } else if (!isAdmin) {
             throw new ForbiddenException('companyId is required.');
         }
@@ -164,25 +168,42 @@ export class EmployeeUseCases {
         const salaryQuery: any = { deletedAt: null, month: finalMonth };
         const cnssQuery: any = { deletedAt: null, month: finalMonth };
 
-        if (companyId) {
+        if (companyId && employeeIds.length > 0) {
             salaryQuery.employeeId = { $in: employeeIds };
             cnssQuery.employeeId = { $in: employeeIds };
         }
 
         // Get all salaries for the month
-        const salaries = await this.dataService.salary.findAllByAttributeWithFilter(salaryQuery, 1, 1000);
+        const salaries = await this.dataService.salary.findAllByAttributeWithFilter(salaryQuery, 1, 10000);
         const totalSalaryAmount = salaries?.reduce((sum, s) => sum + (Number(s.netAmount) || 0), 0) || 0;
 
         // Get all CNSS payments for the month
-        const cnssPayments = await this.dataService.cnssPayment.findAllByAttributeWithFilter(cnssQuery, 1, 1000);
+        const cnssPayments = await this.dataService.cnssPayment.findAllByAttributeWithFilter(cnssQuery, 1, 10000);
         const totalCnssAmount = cnssPayments?.reduce((sum, c) => sum + (Number(c.amount) || 0), 0) || 0;
+
+        // Prévisionnel: sum from employees when no payroll generated yet (for selected company)
+        let expectedSalaryAmount = 0;
+        let expectedCnssAmount = 0;
+        if (companyEmployees.length > 0) {
+            for (const emp of companyEmployees) {
+                const net = Number(emp.monthlyNetSalary || 0);
+                expectedSalaryAmount += net;
+                if (emp.cnssApplicable && Number(emp.cnssRatePercent || 0) > 0) {
+                    expectedCnssAmount += this.roundToTwo((net * Number(emp.cnssRatePercent || 0)) / 100);
+                }
+            }
+            expectedSalaryAmount = this.roundToTwo(expectedSalaryAmount);
+        }
 
         return {
             month: finalMonth,
             totalSalaryAmount,
             totalCnssAmount,
             salaryCount: salaries?.length || 0,
-            cnssCount: cnssPayments?.length || 0
+            cnssCount: cnssPayments?.length || 0,
+            employeeCount: companyEmployees.length,
+            expectedSalaryAmount,
+            expectedCnssAmount,
         };
     }
 
@@ -196,7 +217,7 @@ export class EmployeeUseCases {
             if (!companyId) {
                 throw new ForbiddenException('companyId is required.');
             }
-            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.MANAGER]);
+            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         const query: any = { deletedAt: null };
@@ -301,12 +322,9 @@ export class EmployeeUseCases {
     ): Promise<{ created: number; skipped: number; errors: Array<{ row: number; data: Record<string, string>; errors: string[] }>; totalRows: number }> {
         const company = await this.dataService.company.get(payload.companyId);
         if (!company) throw new NotFoundException('Company not found.');
-        if (company.companyType !== companyType.mycompany) {
-            throw new BadRequestException('Employee must belong to a mycompany.');
-        }
 
         if (!this.isAdmin(user.roles)) {
-            await this.assertCompanyMembership(user._id, payload.companyId, [CompanyRole.MANAGER]);
+            await this.assertCompanyMembership(user._id, payload.companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         const rows = this.parseCsvRows(payload.csv);
@@ -400,11 +418,14 @@ export class EmployeeUseCases {
     }
 
     async exportEmployeesCsv(user: RequestUser, companyId: string): Promise<string> {
+        if (!companyId || typeof companyId !== 'string' || !Types.ObjectId.isValid(companyId)) {
+            throw new BadRequestException('Valid companyId is required.');
+        }
         const company = await this.dataService.company.get(companyId);
         if (!company) throw new NotFoundException('Company not found.');
 
         if (!this.isAdmin(user.roles)) {
-            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.MANAGER, CompanyRole.ACCOUNTANT]);
+            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         const employees = await this.dataService.employee.findAllByAttributeWithFilter(
@@ -441,15 +462,19 @@ export class EmployeeUseCases {
             .map((row) => row.map((value) => this.toCsvValue(value)).join(','))
             .join('\n');
 
-        await this.dataService.auditLog.create({
-            userId: user._id,
-            companyId,
-            action: 'EMPLOYEE_CSV_EXPORT',
-            entityType: 'employee',
-            metadata: {
-                count: rows.length,
-            },
-        } as any);
+        try {
+            await this.dataService.auditLog.create({
+                userId: new Types.ObjectId(user._id),
+                companyId: new Types.ObjectId(companyId),
+                action: 'EMPLOYEE_CSV_EXPORT',
+                entityType: 'employee',
+                metadata: {
+                    count: rows.length,
+                },
+            } as any);
+        } catch {
+            // Don't fail export if audit log fails
+        }
 
         return csv;
     }
@@ -458,11 +483,29 @@ export class EmployeeUseCases {
         return roles?.includes(Role.SUPERADMIN) ?? false;
     }
 
+    /** Get company ID string from employee (handles populated companyId object or raw ObjectId). */
+    private getEmployeeCompanyId(employee: Employee): string | undefined {
+        const c = (employee as any).companyId;
+        if (c == null) return undefined;
+        const id = (typeof c === 'object' && c !== null && '_id' in c) ? (c._id ?? c) : c;
+        return id?.toString?.() ?? undefined;
+    }
+
     private async assertCompanyMembership(
         userId: string,
         companyId: string,
         allowedRoles: CompanyRole[]
     ): Promise<void> {
+        const allowOwner = allowedRoles.includes(CompanyRole.OWNER);
+        if (allowOwner) {
+            const owned = await this.dataService.company.findAllByAttributeWithFilter(
+                { _id: new Types.ObjectId(companyId), userId: new Types.ObjectId(userId) },
+                1,
+                1
+            );
+            if (owned?.length) return;
+        }
+
         const membership = await this.dataService.companyMembership.findAllByAttributeWithFilter(
             {
                 deletedAt: null,
@@ -477,7 +520,9 @@ export class EmployeeUseCases {
             throw new ForbiddenException('Access denied');
         }
 
-        if (allowedRoles.length && !allowedRoles.includes(membership[0].role)) {
+        const role = (membership[0].role as string)?.toLowerCase?.() ?? membership[0].role;
+        const rolesToCheck = allowedRoles.filter((r) => r !== CompanyRole.OWNER) as string[];
+        if (rolesToCheck.length && !rolesToCheck.includes(role)) {
             throw new ForbiddenException('Insufficient role for this action.');
         }
     }
@@ -532,8 +577,8 @@ export class EmployeeUseCases {
         return rows;
     }
 
-    private toCsvValue(value: string): string {
-        const stringValue = value ?? '';
+    private toCsvValue(value: string | number | undefined | null): string {
+        const stringValue = value != null && value !== '' ? String(value) : '';
         if (stringValue.includes('"')) {
             const escaped = stringValue.replace(/"/g, '""');
             return `"${escaped}"`;
@@ -563,22 +608,99 @@ export class EmployeeUseCases {
         if (!existing) throw new NotFoundException('Employee not found.');
 
         if (!this.isAdmin(user.roles)) {
-            const companyId = existing.companyId?.toString();
+            const companyId = this.getEmployeeCompanyId(existing);
             if (!companyId) {
                 throw new ForbiddenException('You do not have permission to delete this employee.');
             }
-            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.MANAGER]);
+            await this.assertCompanyMembership(user._id, companyId, [CompanyRole.OWNER, CompanyRole.MANAGER]);
         }
 
         return await this.dataService.employee.delete(id);
     }
 
+    /**
+    * My companies + invited memberships. Single source of truth from DB.
+    * 1. companies collection: userId = current user → OWNER
+    * 2. company_memberships collection: userId = current user → MANAGER/ACCOUNTANT
+    * Every item has companyId: { _id: string, companyname: string }, role: string.
+     */
     async getUserMemberships(userId: string): Promise<{ memberships: any[] }> {
-        const memberships = await this.dataService.companyMembership.findAllByAttributeWithFilter(
-            { deletedAt: null, userId: new Types.ObjectId(userId) },
+        const uid = (userId != null && userId !== '') ? String(userId).trim() : '';
+        console.log('[my-memberships] UseCase: userId param=', userId, 'uid=', uid);
+        if (!uid || uid === 'undefined') {
+            console.log('[my-memberships] UseCase: returning empty (invalid uid)');
+            return { memberships: [] };
+        }
+
+        let objectId: Types.ObjectId;
+        try {
+            objectId = new Types.ObjectId(uid);
+        } catch (e) {
+            console.log('[my-memberships] UseCase: ObjectId(uid) failed', e);
+            return { memberships: [] };
+        }
+
+        const list: any[] = [];
+
+        // 1. Owned: from "companies" collection (userId = me, type mycompany)
+        let ownedRaw = await this.dataService.company.findAllByAttributeWithFilter(
+            { userId: objectId },
             1,
-            100
+            500
         );
-        return { memberships: memberships || [] };
+        if (!ownedRaw?.length) {
+            ownedRaw = await this.dataService.company.findAllByAttributeWithFilter(
+                { userId: uid },
+                1,
+                500
+            ) || [];
+            if (ownedRaw.length) console.log('[my-memberships] UseCase: found owned with userId as string');
+        }
+        const owned = ownedRaw || [];
+        console.log('[my-memberships] UseCase: owned raw count=', ownedRaw?.length ?? 0, 'userId=', uid);
+        if (owned.length) {
+            console.log('[my-memberships] UseCase: first owned _id=', owned[0]?._id?.toString?.(), 'companyname=', owned[0]?.companyname);
+        }
+        for (const c of owned) {
+            const cid = c._id?.toString?.();
+            if (!cid) continue;
+            list.push({
+                _id: `owner-${cid}`,
+                userId: uid,
+                companyId: {
+                    _id: cid,
+                    companyname: c.companyname ?? '',
+                },
+                role: 'OWNER',
+            });
+        }
+
+        // 2. Invited: from "company_memberships" collection
+        const invited = await this.dataService.companyMembership.findAllByAttributeWithFilter(
+            { deletedAt: null, userId: objectId },
+            1,
+            500
+        );
+        console.log('[my-memberships] UseCase: invited memberships count=', invited?.length ?? 0);
+        const seenIds = new Set(list.map((x) => x.companyId._id));
+        for (const m of invited || []) {
+            const doc = (m as any)?.toObject?.() ?? m;
+            const cid = doc.companyId?._id?.toString?.() ?? doc.companyId?.toString?.();
+            if (!cid || seenIds.has(cid)) continue;
+            seenIds.add(cid);
+            const role = (doc.role?.toUpperCase?.() || doc.role) ?? 'MANAGER';
+            list.push({
+                _id: doc._id?.toString?.() ?? `invited-${cid}`,
+                userId: uid,
+                companyId: {
+                    _id: cid,
+                    companyname: doc.companyId?.companyname ?? '',
+                },
+                role,
+            });
+        }
+
+        console.log('[my-memberships] UseCase: returning total memberships=', list.length);
+        return { memberships: list };
     }
 }

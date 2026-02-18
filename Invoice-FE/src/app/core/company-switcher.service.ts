@@ -51,14 +51,16 @@ export class CompanySwitcherService {
       tap((res) => {
         const list = this.parseMemberships(res);
         console.log('[company-switcher] my-memberships response:', res, 'parsed list length=', list.length);
-        if (list.length > 0) {
-          this.memberships.set(list);
-          if (!this.selectedCompanyId()) {
-            const firstId = this.idOf(list[0]);
-            if (firstId) {
-              this.selectedCompanyId.set(firstId);
-              localStorage.setItem('selectedCompanyId', firstId);
-            }
+        this.memberships.set(list);
+        if (list.length === 0) {
+          this.clearSelection();
+          return;
+        }
+        if (!this.selectedCompanyId()) {
+          const firstId = this.idOf(list[0]);
+          if (firstId) {
+            this.selectedCompanyId.set(firstId);
+            localStorage.setItem('selectedCompanyId', firstId);
           }
         }
       })
@@ -112,5 +114,10 @@ export class CompanySwitcherService {
   clearSelection(): void {
     this.selectedCompanyId.set(null);
     localStorage.removeItem('selectedCompanyId');
+  }
+
+  clearAll(): void {
+    this.memberships.set([]);
+    this.clearSelection();
   }
 }

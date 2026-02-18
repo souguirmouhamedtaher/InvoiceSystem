@@ -10,7 +10,6 @@ import {  User } from "../../domain/entities";
 import { CreateCompanyUserDto, CreateSuperAdminDto, UpdateSuperAdminDto } from "../dtos";
 import { UserFactory } from "../factoryMapper";
 import { Role } from "src/domain/enums/role.enums";
-import { companyType } from "src/domain/enums/company.enums";
 
 @Injectable()
 export class SuperAdminUseCases {
@@ -64,9 +63,6 @@ export class SuperAdminUseCases {
     ): Promise<{ user: User; membershipId: string }> {
         const company = await this.dataServices.company.get(payload.companyId);
         if (!company) throw new NotFoundException('Company not found.');
-        if (company.companyType !== companyType.mycompany) {
-            throw new BadRequestException('Company must be a mycompany.');
-        }
 
         const email = payload.email.toLowerCase();
         let user = await this.dataServices.user.findByAttribute('email', email);
@@ -85,8 +81,12 @@ export class SuperAdminUseCases {
             newUser.createdAt = new Date();
             newUser.updatedAt = new Date();
 
-            temporaryPassword = crypto.randomBytes(12).toString('base64url');
-            newUser.password = await this.hashServices.hash(temporaryPassword);
+            if (payload.password && payload.password.trim()) {
+                newUser.password = await this.hashServices.hash(payload.password.trim());
+            } else {
+                temporaryPassword = crypto.randomBytes(12).toString('base64url');
+                newUser.password = await this.hashServices.hash(temporaryPassword);
+            }
 
             user = await this.dataServices.user.create(newUser);
         }

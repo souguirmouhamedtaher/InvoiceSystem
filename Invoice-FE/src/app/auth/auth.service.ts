@@ -22,6 +22,17 @@ export type SignUpPayload = {
   password: string;
 };
 
+export type ProfilePayload = {
+  phone: string;
+};
+
+export type UserProfile = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
@@ -141,6 +152,27 @@ export class AuthService {
     return this.http
       .post<ApiResponse<string>>(`${environment.apiBaseUrl}/auth/resetPassword?token=${encodeURIComponent(token)}`, {
         token,
+        newPassword,
+      })
+      .pipe(map(() => void 0));
+  }
+
+  loadMe(): Observable<UserProfile> {
+    return this.http
+      .get<ApiResponse<UserProfile> | UserProfile>(`${environment.apiBaseUrl}/auth/loadme`)
+      .pipe(map((response: any) => response?.data ?? response));
+  }
+
+  updateProfile(payload: ProfilePayload): Observable<UserProfile> {
+    return this.http
+      .patch<ApiResponse<UserProfile> | UserProfile>(`${environment.apiBaseUrl}/auth/profile`, payload)
+      .pipe(map((response: any) => response?.data ?? response));
+  }
+
+  updatePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http
+      .post<ApiResponse<string>>(`${environment.apiBaseUrl}/auth/updatePassword`, {
+        currentPassword,
         newPassword,
       })
       .pipe(map(() => void 0));

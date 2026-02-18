@@ -5,6 +5,7 @@ import { clientType, invoiceStatus, invoiceType, paymentType } from 'src/domain/
 import { devisType } from 'src/domain/enums/invoice.enums';
 import { Libelle } from './libelle.model';
 import { Company } from './company.model';
+import { Client } from './client.model';
 
 export type InvoiceDocument = Invoice & Document;
 
@@ -93,14 +94,11 @@ export class Invoice {
     @Prop()
     montantInternational?: number;
 
-    @Prop({ type: Types.ObjectId, ref: Company.name, required: false })
-    clientId?: Company ;
+    @Prop({ type: Types.ObjectId, ref: Client.name, required: false })
+    clientId?: Client ;
 
-    @Prop({ type: Types.ObjectId, ref: Company.name, required: false })
-    supplierId?: Company ;
-
-    @Prop({ type: Types.ObjectId, ref: Company.name, required: false })
-    mycompanyId?: Company ;
+    @Prop({ type: Types.ObjectId, ref: Company.name, required: true })
+    companyId: Company ;
 
     @Prop()
     notes: string;

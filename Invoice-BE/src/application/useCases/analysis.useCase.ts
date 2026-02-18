@@ -1,18 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { IDataServices } from 'src/domain/abstracts';
 import { invoiceStatus, invoiceType } from 'src/domain/enums/invoice.enums';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class AnalysisUseCases {
     constructor(private dataService: IDataServices) { }
 
-    async getTreasuryAnalysis(year?: number, month?: number) {
-        // 1. Fetch all relevant data
-        // If year is provided, we fetch data for that year. 
-        // To calculate carry-forward accurately, we ideally need all data from the beginning.
-        // For performance, let's fetch everything that is not deleted.
-        const allInvoices = await this.dataService.invoice.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000);
-        const allPurchases = await this.dataService.purchaseInvoice.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000);
+    async getTreasuryAnalysis(year?: number, month?: number, companyId?: string) {
+        // 1. Fetch all relevant data (optionally scoped by company)
+        const invoiceQuery: any = { deletedAt: null };
+        const purchaseQuery: any = { deletedAt: null };
+        if (companyId) {
+            invoiceQuery.companyId = new Types.ObjectId(companyId);
+            purchaseQuery.companyId = new Types.ObjectId(companyId);
+        }
+        const allInvoices = await this.dataService.invoice.findAllByAttributeWithFilter(invoiceQuery, 1, 100000);
+        const allPurchases = await this.dataService.purchaseInvoice.findAllByAttributeWithFilter(purchaseQuery, 1, 100000);
 
         // 2. Group by Month/Year
         // We'll create a map: "YYYY-MM" -> { sales: {...}, purchases: {...} }
@@ -192,16 +196,37 @@ export class AnalysisUseCases {
         };
     }
 
-    async getCashDashboard(year?: number, month?: number) {
+    async getCashDashboard(year?: number, month?: number, companyId?: string) {
+        const invoiceQuery: any = { deletedAt: null };
+        const purchaseQuery: any = { deletedAt: null };
+        let salaryQuery: any = { deletedAt: null };
+        let cnssQuery: any = { deletedAt: null };
+        const tvaQuery: any = { deletedAt: null };
+        if (companyId) {
+            const cid = new Types.ObjectId(companyId);
+            invoiceQuery.companyId = cid;
+            purchaseQuery.companyId = cid;
+            tvaQuery.companyId = cid;
+            const companyEmployees = await this.dataService.employee.findAllByAttributeWithFilter(
+                { deletedAt: null, companyId: cid }, 1, 100000
+            );
+            const employeeIds = (companyEmployees || []).map((e: any) => e._id);
+            salaryQuery = { deletedAt: null, employeeId: { $in: employeeIds } };
+            cnssQuery = { deletedAt: null, employeeId: { $in: employeeIds } };
+        } else {
+            salaryQuery = { deletedAt: null };
+            cnssQuery = { deletedAt: null };
+        }
+
         const [allInvoices, allPurchases, allSalaries, allCnssPayments, allTvaPayments] = await Promise.all([
-            this.dataService.invoice.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
-            this.dataService.purchaseInvoice.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
-            this.dataService.salary.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
-            this.dataService.cnssPayment.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
-            this.dataService.tvaPayment.findAllByAttributeWithFilter({ deletedAt: null }, 1, 100000),
+            this.dataService.invoice.findAllByAttributeWithFilter(invoiceQuery, 1, 100000),
+            this.dataService.purchaseInvoice.findAllByAttributeWithFilter(purchaseQuery, 1, 100000),
+            this.dataService.salary.findAllByAttributeWithFilter(salaryQuery, 1, 100000),
+            this.dataService.cnssPayment.findAllByAttributeWithFilter(cnssQuery, 1, 100000),
+            this.dataService.tvaPayment.findAllByAttributeWithFilter(tvaQuery, 1, 100000),
         ]);
 
-        const treasury = await this.getTreasuryAnalysis();
+        const treasury = await this.getTreasuryAnalysis(undefined, undefined, companyId);
         const vatByMonth = new Map<string, number>();
         treasury.monthlyBreakdown.forEach((entry) => {
             vatByMonth.set(entry.month, entry.summary?.vatToPay || 0);

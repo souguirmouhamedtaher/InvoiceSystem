@@ -5,6 +5,8 @@ export * from "./superAdmin.useCase"
 export * from "./auth.useCases"
 
 export * from "./company.useCase"
+export * from "./client.useCase"
+export * from "./supplier.useCase"
 export * from "./taxSettings.useCase"
 export * from "./libelle.useCase"
 export * from "./invoice.useCase"

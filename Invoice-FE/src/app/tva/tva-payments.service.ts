@@ -24,6 +24,7 @@ export class TvaPaymentsService {
     page: number;
     limit: number;
     month?: string;
+    companyId?: string;
   }): Observable<TvaPaymentListResponse> {
     const query = new HttpParams({
       fromObject: Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {

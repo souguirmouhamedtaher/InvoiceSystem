@@ -10,6 +10,8 @@ import {
   InvoiceCalculatePayload,
   InvoiceListResponse,
   InvoiceTotals,
+  TtnSimulation,
+  TtnSimulationListResponse,
 } from './invoice.model';
 
 @Injectable({ providedIn: 'root' })
@@ -77,6 +79,18 @@ export class InvoiceService {
   addInvoicePayment(id: string, payload: AddInvoicePaymentPayload): Observable<Invoice> {
     return this.http
       .post<ApiResponse<Invoice>>(`${environment.apiBaseUrl}/invoice/${id}/payments`, payload)
+      .pipe(map((response) => response.data));
+  }
+
+  submitTtnSimulation(id: string): Observable<TtnSimulation> {
+    return this.http
+      .post<ApiResponse<TtnSimulation>>(`${environment.apiBaseUrl}/invoice/${id}/submit-ttn`, {})
+      .pipe(map((response) => response.data));
+  }
+
+  getTtnSimulationHistory(id: string): Observable<TtnSimulationListResponse> {
+    return this.http
+      .get<ApiResponse<TtnSimulationListResponse>>(`${environment.apiBaseUrl}/invoice/${id}/ttn-simulations`)
       .pipe(map((response) => response.data));
   }
 }

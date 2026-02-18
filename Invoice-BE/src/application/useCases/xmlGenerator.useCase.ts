@@ -6,7 +6,7 @@ import * as xml2js from 'xml2js';
 export class XmlGeneratorUseCases {
     /**
      * Generate Tunisian Elfatoora TEIF v1.8.8 XML format for an invoice
-     * @param invoice - Fully populated invoice with relations (mycompanyId, clientId/supplierId, Libelle)
+    * @param invoice - Fully populated invoice with relations (companyId, clientId, Libelle)
      * @returns XML buffer ready for download
      */
     async generateInvoiceXml(invoice: Invoice): Promise<Buffer> {
@@ -22,8 +22,8 @@ export class XmlGeneratorUseCases {
     }
 
     private buildXmlObject(invoice: Invoice): any {
-        const seller = invoice.mycompanyId;
-        const buyer = invoice.invoiceType === 'buying' ? invoice.supplierId : invoice.clientId;
+        const seller = (invoice as any).companyId;
+        const buyer = (invoice as any).clientId;
         
         // Format dates
         const invoiceDate = this.formatDateDDMMYY(invoice.dateInvoice);
@@ -156,6 +156,8 @@ export class XmlGeneratorUseCases {
             });
         }
 
+        const pytSection = this.buildPytSection(invoice, seller);
+
         return {
             TEIF: {
                 $: {
@@ -169,7 +171,7 @@ export class XmlGeneratorUseCases {
                     },
                     MessageRecieverIdentifier: {
                         $: { type: 'I-01' },
-                        _: buyer?.Patente || '0000000000000',
+                        _: buyer?.taxId || buyer?.Patente || '0000000000000',
                     },
                 },
                 InvoiceBody: {
@@ -228,7 +230,7 @@ export class XmlGeneratorUseCases {
                                         Contact: {
                                             $: { functionCode: 'I-94' },
                                             ContactIdentifier: seller?.companyname || 'N/A',
-                                            ContactName: seller?.ResponsibleName || seller?.companyname || 'N/A',
+                                            ContactName: seller?.companyname || 'N/A',
                                         },
                                         Communication: {
                                             ComMeansType: 'I-101',
@@ -239,7 +241,7 @@ export class XmlGeneratorUseCases {
                                         Contact: {
                                             $: { functionCode: 'I-94' },
                                             ContactIdentifier: seller?.companyname || 'N/A',
-                                            ContactName: seller?.ResponsibleName || seller?.companyname || 'N/A',
+                                            ContactName: seller?.companyname || 'N/A',
                                         },
                                         Communication: {
                                             ComMeansType: 'I-104',
@@ -254,11 +256,11 @@ export class XmlGeneratorUseCases {
                                 Nad: {
                                     PartnerIdentifier: {
                                         $: { type: 'I-01' },
-                                        _: buyer?.Patente || '0000000000000',
+                                        _: buyer?.taxId || buyer?.Patente || '0000000000000',
                                     },
                                     PartnerName: {
                                         $: { nameType: 'Qualification' },
-                                        _: buyer?.companyname || 'N/A',
+                                        _: buyer?.name || 'N/A',
                                     },
                                     PartnerAdresses: {
                                         $: { lang: 'fr' },
@@ -275,32 +277,13 @@ export class XmlGeneratorUseCases {
                                 RffSection: {
                                     Reference: {
                                         $: { refID: 'I-81' },
-                                        _: buyer?.Patente || '0000000000000',
+                                        _: buyer?.taxId || buyer?.Patente || '0000000000000',
                                     },
                                 },
                             },
                         ],
                     },
-                    PytSection: seller?.bankRib ? {
-                        PytSectionDetails: {
-                            Pyt: {
-                                PaymentTearmsTypeCode: 'I-114',
-                                PaymentTearmsDescription: `Les banques sont priees de payer au RIB suivant: ${seller.bankRib}.`,
-                            },
-                            PytFii: {
-                                $: { functionCode: 'I-141' },
-                                AccountHolder: {
-                                    AccountNumber: seller.bankRib,
-                                    OwnerIdentifier: 'RIB',
-                                },
-                                InstitutionIdentification: {
-                                    $: { nameCode: seller.bankName || 'BANK' },
-                                    BranchIdentifier: seller.bankBIC || '0000',
-                                    InstitutionName: seller.bankName || 'Banque',
-                                },
-                            },
-                        },
-                    } : undefined,
+                    ...(pytSection ? { PytSection: pytSection } : {}),
                     LinSection: {
                         Lin: lines,
                     },
@@ -354,6 +337,149 @@ export class XmlGeneratorUseCases {
                 },
             },
         };
+    }
+
+    private buildPytSection(invoice: Invoice, seller: any): any | undefined {
+        const payments = Array.isArray((invoice as any).payments) ? (invoice as any).payments : [];
+        if (!payments.length) return undefined;
+
+        const bankInfo = this.buildPytFii(seller);
+        const details = payments.map((payment: any) => {
+            const segment: any = {
+                Pyt: {
+                    PaymentTearmsTypeCode: this.mapPaymentTermsCode(payment.paymentType),
+                    PaymentTearmsDescription: this.buildPaymentDescription(payment, seller),
+                },
+            };
+
+            const paymentDate = payment?.date ? this.formatDateDDMMYY(payment.date) : undefined;
+            if (paymentDate) {
+                segment.PytDtm = {
+                    DateText: {
+                        $: { format: 'ddMMyy', functionCode: 'I-32' },
+                        _: paymentDate,
+                    },
+                };
+            }
+
+            if (payment?.amount != null) {
+                segment.PytMoa = {
+                    Moa: {
+                        $: { amountTypeCode: 'I-179', currencyCodeList: 'ISO_4217' },
+                        Amount: {
+                            $: { currencyIdentifier: 'TND' },
+                            _: this.formatAmount(payment.amount),
+                        },
+                    },
+                };
+            }
+
+            const pai = this.buildPytPai(payment.paymentType);
+            if (pai) {
+                segment.PytPai = pai;
+            }
+
+            if (bankInfo) {
+                segment.PytFii = bankInfo;
+            }
+
+            return segment;
+        });
+
+        return { PytSectionDetails: details };
+    }
+
+    private buildPytPai(paymentType?: string): any | undefined {
+        const means = this.mapPaymentMeansCode(paymentType);
+        const condition = this.mapPaymentTermsCode(paymentType);
+        if (!means && !condition) return undefined;
+        return {
+            PaiConditionCode: condition,
+            PaiMeansCode: means,
+        };
+    }
+
+    private buildPytFii(seller: any): any | undefined {
+        if (!seller) return undefined;
+
+        const accountNumber = seller.bankAccountNumber || seller.bankRib || seller.bankIBAN;
+        const ownerId = seller.bankOwnerIdentifier;
+        const institutionCode = seller.bankInstitutionCode || seller.bankBIC;
+        const institutionName = seller.bankInstitutionName || seller.bankName;
+        const branchCode = seller.bankBranchCode;
+        const bankCountry = seller.bankCountry || seller.country;
+
+        if (!accountNumber && !ownerId && !institutionCode && !institutionName && !branchCode && !bankCountry) {
+            return undefined;
+        }
+
+        const fii: any = { $: { functionCode: 'I-141' } };
+
+        if (accountNumber || ownerId) {
+            fii.AccountHolder = {
+                AccountNumber: accountNumber || 'N/A',
+                ...(ownerId ? { OwnerIdentifier: ownerId } : {}),
+            };
+        }
+
+        if (institutionCode || institutionName || branchCode) {
+            fii.InstitutionIdentification = {
+                $: { nameCode: institutionCode || '0000' },
+                ...(branchCode ? { BranchIdentifier: branchCode } : {}),
+                ...(institutionName ? { InstitutionName: institutionName } : {}),
+            };
+        }
+
+        if (bankCountry) {
+            fii.Country = {
+                $: { codeList: 'ISO_3166-1' },
+                _: bankCountry,
+            };
+        }
+
+        return fii;
+    }
+
+    private buildPaymentDescription(payment: any, seller: any): string {
+        const method = (payment?.paymentType || 'cash').toString();
+        const accountNumber = seller?.bankAccountNumber || seller?.bankRib || seller?.bankIBAN;
+        if (method === 'bankTransfer' && accountNumber) {
+            return `Virement bancaire vers ${accountNumber}.`;
+        }
+        if (method === 'cash') {
+            return 'Paiement en especes.';
+        }
+        return `Paiement ${method}.`;
+    }
+
+    private mapPaymentTermsCode(paymentType?: string): string {
+        switch (paymentType) {
+            case 'bankTransfer':
+                return 'I-114';
+            case 'cheque':
+            case 'check':
+                return 'I-115';
+            default:
+                return 'I-114';
+        }
+    }
+
+    private mapPaymentMeansCode(paymentType?: string): string {
+        switch (paymentType) {
+            case 'cash':
+                return 'CASH';
+            case 'bankTransfer':
+                return 'BANK';
+            case 'creditCard':
+                return 'CARD';
+            case 'paypal':
+                return 'PAYPL';
+            case 'cheque':
+            case 'check':
+                return 'CHECK';
+            default:
+                return 'CASH';
+        }
     }
 
     private formatDateDDMMYY(date: string): string {

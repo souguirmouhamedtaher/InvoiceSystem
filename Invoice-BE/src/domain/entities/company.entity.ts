@@ -1,28 +1,22 @@
 import { Base } from './base.entity';
-import { companyType } from '../enums/company.enums';
-
 export class Company extends Base {
     userId: any;
     companyname: string;
-    companyType: companyType;
-    logo: string;
     Patente: string;
     bankName: string;
     bankIBAN: string;
     bankRib: string;
     bankBIC: string;
+    bankAccountNumber?: string;
+    bankOwnerIdentifier?: string;
+    bankInstitutionCode?: string;
+    bankInstitutionName?: string;
+    bankBranchCode?: string;
+    bankCountry?: string;
     address: string;
     email: string;
     phones: string[];
-    ResponsibleName: string;
-    ResponsibleEmail: string;
-    ResponsiblePhone: string;
-    companySector: string;
-    companySubSector: string;
-    supplierType?: string;
-    accountingEmail?: string;
-    vatIncluded?: boolean;
+    region: string;
     country: string;
-    city: string;
     notes: string;
 }

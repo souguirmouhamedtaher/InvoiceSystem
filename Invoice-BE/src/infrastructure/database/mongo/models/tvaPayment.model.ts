@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { User } from './user.model';
 import { Company } from './company.model';
+import { paymentType } from 'src/domain/enums/invoice.enums';
 
 export type TvaPaymentDocument = TvaPayment & Document;
 
@@ -23,6 +24,9 @@ export class TvaPayment {
 
     @Prop({ required: true })
     paymentDate: string;
+
+    @Prop({ enum: paymentType })
+    paymentType?: paymentType;
 
     @Prop()
     proofUrl?: string;

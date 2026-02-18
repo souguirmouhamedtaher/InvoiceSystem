@@ -55,7 +55,7 @@ export class InvoiceController {
     @ApiQuery({ name: 'invoiceStatus', required: false, type: String, description: 'Filter by invoice status' })
     @ApiQuery({ name: 'dateFrom', required: false, type: String, description: 'Filter by start date (YYYY-MM-DD)' })
     @ApiQuery({ name: 'dateTo', required: false, type: String, description: 'Filter by end date (YYYY-MM-DD)' })
-    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by mycompanyId' })
+    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by companyId' })
     async getAllInvoices(@UserDecorator() user, @Query() query): Promise<{ invoices: Invoice[]; totalInvoices: number }> {
         const page = parseInt(query.page, 10) || 1;
         const limit = parseInt(query.limit, 10) || 20;
@@ -68,7 +68,7 @@ export class InvoiceController {
     @Get('stats')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get invoice statistics (total count, total amount, count by status)' })
-    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by mycompanyId' })
+    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by companyId' })
     async getInvoiceStats(@UserDecorator() user, @Query('companyId') companyId?: string): Promise<{
         totalInvoices: number;
         totalAmount: number;
@@ -82,7 +82,7 @@ export class InvoiceController {
     @ApiOperation({ summary: 'Get invoices by date range' })
     @ApiQuery({ name: 'startDate', required: true, type: String, description: 'Start date (YYYY-MM-DD)' })
     @ApiQuery({ name: 'endDate', required: true, type: String, description: 'End date (YYYY-MM-DD)' })
-    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by mycompanyId' })
+    @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by companyId' })
     async getInvoicesByDateRange(
         @UserDecorator() user,
         @Query('startDate') startDate: string,
@@ -164,5 +164,19 @@ export class InvoiceController {
         @Body() payload: AddInvoicePaymentDto
     ): Promise<Invoice> {
         return this.invoiceUseCases.addInvoicePayment(user, id, payload);
+    }
+
+    @Post(':id/submit-ttn')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Submit invoice to TTN (simulation)' })
+    async submitTtnSimulation(@UserDecorator() user, @Param('id') id: string) {
+        return this.invoiceUseCases.submitTtnSimulation(user, id);
+    }
+
+    @Get(':id/ttn-simulations')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get TTN simulation history for an invoice' })
+    async getTtnSimulationHistory(@UserDecorator() user, @Param('id') id: string) {
+        return this.invoiceUseCases.getTtnSimulationHistory(user, id);
     }
 }

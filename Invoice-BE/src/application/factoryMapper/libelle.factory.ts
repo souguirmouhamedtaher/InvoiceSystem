@@ -91,6 +91,7 @@ export class LibelleFactory {
   createLibelle(createLibelleDto: CreateLibelleDto, taxprice: number = 0): Libelle {
     const newLibelle = new Libelle();
     
+    newLibelle.companyId = new Types.ObjectId(createLibelleDto.companyId);
     newLibelle.name = createLibelleDto.name;
     if (createLibelleDto.description) newLibelle.description = createLibelleDto.description;
     newLibelle.qte = createLibelleDto.qte;

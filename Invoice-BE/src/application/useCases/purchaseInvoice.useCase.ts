@@ -47,10 +47,21 @@ export class PurchaseInvoiceUseCases {
     }
 
     async createPurchaseInvoice(dto: CreatePurchaseInvoiceDto): Promise<PurchaseInvoice> {
-        const purchaseInvoice = {
-            ...dto,
-            companyId: dto.companyId as any,
-        } as any;
+            const company = await this.dataService.company.get(dto.companyId);
+            if (!company) throw new NotFoundException('Company not found.');
+
+            const supplier = await this.dataService.supplier.get(dto.supplierId);
+            if (!supplier) throw new NotFoundException('Supplier not found.');
+            const supplierCompanyId = (supplier as any).companyId?._id ?? (supplier as any).companyId;
+            if (String(supplierCompanyId) !== String(dto.companyId)) {
+                throw new NotFoundException('Supplier does not belong to this company.');
+            }
+
+            const purchaseInvoice = {
+                ...dto,
+                companyId: dto.companyId as any,
+                supplierId: dto.supplierId as any,
+            } as any;
 
         return await this.dataService.purchaseInvoice.create(purchaseInvoice);
     }

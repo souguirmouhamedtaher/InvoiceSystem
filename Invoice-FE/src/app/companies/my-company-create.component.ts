@@ -22,12 +22,23 @@ export class MyCompanyCreateComponent {
 
   protected readonly form = this.fb.group({
     companyname: ['', [Validators.required, Validators.minLength(2)]],
+    Patente: [''],
     email: ['', [Validators.required, Validators.email]],
     address: ['', [Validators.required, Validators.minLength(6)]],
     phonesRaw: ['', [Validators.required, Validators.pattern(/^[+\d\s,.-]+$/)]],
     region: [''],
     country: [''],
     notes: [''],
+    bankName: [''],
+    bankIBAN: [''],
+    bankRib: [''],
+    bankBIC: [''],
+    bankAccountNumber: [''],
+    bankOwnerIdentifier: [''],
+    bankInstitutionCode: [''],
+    bankInstitutionName: [''],
+    bankBranchCode: [''],
+    bankCountry: [''],
   });
 
   constructor(
@@ -51,12 +62,23 @@ export class MyCompanyCreateComponent {
 
     const payload: CreateCompanyPayload = {
       companyname: (this.form.value.companyname || '').trim(),
+      Patente: this.cleanOptional(this.form.value.Patente),
       email: (this.form.value.email || '').trim(),
       address: (this.form.value.address || '').trim(),
       phones,
       region: this.cleanOptional(this.form.value.region),
       country: this.cleanOptional(this.form.value.country),
       notes: this.cleanOptional(this.form.value.notes),
+      bankName: this.cleanOptional(this.form.value.bankName),
+      bankIBAN: this.cleanOptional(this.form.value.bankIBAN),
+      bankRib: this.cleanOptional(this.form.value.bankRib),
+      bankBIC: this.cleanOptional(this.form.value.bankBIC),
+      bankAccountNumber: this.cleanOptional(this.form.value.bankAccountNumber),
+      bankOwnerIdentifier: this.cleanOptional(this.form.value.bankOwnerIdentifier),
+      bankInstitutionCode: this.cleanOptional(this.form.value.bankInstitutionCode),
+      bankInstitutionName: this.cleanOptional(this.form.value.bankInstitutionName),
+      bankBranchCode: this.cleanOptional(this.form.value.bankBranchCode),
+      bankCountry: this.cleanOptional(this.form.value.bankCountry),
     };
 
     this.saving.set(true);

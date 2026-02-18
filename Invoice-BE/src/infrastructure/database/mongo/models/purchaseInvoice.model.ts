@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Company } from './company.model';
+import { Supplier } from './supplier.model';
 import { paymentType, clientType } from 'src/domain/enums/invoice.enums';
 
 export type PurchaseInvoiceDocument = PurchaseInvoice & Document;
@@ -14,6 +15,9 @@ export class PurchaseInvoice {
 
     @Prop({ type: Types.ObjectId, ref: 'Company', required: true })
     companyId: Company;
+
+    @Prop({ type: Types.ObjectId, ref: Supplier.name, required: true })
+    supplierId: Supplier;
 
     @Prop({ required: true })
     date: string;

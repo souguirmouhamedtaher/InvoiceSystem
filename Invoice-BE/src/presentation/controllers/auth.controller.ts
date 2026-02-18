@@ -2,13 +2,14 @@ import {
     Body,
     Controller,
     Get,
+    Patch,
     Post,
     Query,
     Req,
     UseGuards
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ResetPasswordMobileDto, SignUpDto, UpdateUserPasswordDto, VerifPasswordMobileDto } from '../../application/dtos';
+import { ResetPasswordMobileDto, SignUpDto, UpdateUserPasswordDto, UpdateUserProfileDto, VerifPasswordMobileDto } from '../../application/dtos';
 import { ForgotPasswordDto } from '../../application/dtos/auth/forgotPassword.dto';
 import { LoginDto } from '../../application/dtos/auth/login.dto';
 import { ResetPasswordDto } from '../../application/dtos/auth/resetPassword.dto';
@@ -93,6 +94,13 @@ export class AuthController {
     @ApiBearerAuth()
     async updatePassword(@UserDecorator() user, @Body() { currentPassword, newPassword }: UpdateUserPasswordDto): Promise<string> {
         return this.authUseCases.updatePassword(user._id, currentPassword, newPassword);
+    }
+
+    @UseGuards(AccessTokenGuard)
+    @Patch('profile')
+    @ApiBearerAuth()
+    async updateProfile(@UserDecorator() user, @Body() payload: UpdateUserProfileDto): Promise<User> {
+        return this.authUseCases.updateProfile(user._id, payload);
     }
 
 

@@ -12,6 +12,12 @@ export type Company = {
   bankIBAN?: string;
   bankRib?: string;
   bankBIC?: string;
+  bankAccountNumber?: string;
+  bankOwnerIdentifier?: string;
+  bankInstitutionCode?: string;
+  bankInstitutionName?: string;
+  bankBranchCode?: string;
+  bankCountry?: string;
 };
 
 export type CreateCompanyPayload = {
@@ -27,6 +33,12 @@ export type CreateCompanyPayload = {
   bankIBAN?: string;
   bankRib?: string;
   bankBIC?: string;
+  bankAccountNumber?: string;
+  bankOwnerIdentifier?: string;
+  bankInstitutionCode?: string;
+  bankInstitutionName?: string;
+  bankBranchCode?: string;
+  bankCountry?: string;
 };
 
 export type UpdateCompanyPayload = Partial<CreateCompanyPayload>;

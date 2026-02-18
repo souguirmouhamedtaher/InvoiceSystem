@@ -56,9 +56,29 @@ export class EmployeeController {
     }
 
     @Get('my-memberships')
-    @ApiOperation({ summary: 'Get current user company memberships' })
+    @ApiOperation({ summary: 'Get current user company memberships (owned from companies + invited from company_memberships)' })
     async getUserMemberships(@UserDecorator() user): Promise<{ memberships: any[] }> {
-        return this.employeeUseCases.getUserMemberships(user._id);
+        const raw = user?._id ?? user?.id ?? user?.sub;
+        const userId = raw?.toString?.() ?? (raw != null ? String(raw) : '');
+        console.log('[my-memberships] Controller: raw=', raw, 'userId=', userId);
+        if (!userId || userId === 'undefined') {
+            console.log('[my-memberships] Controller: returning empty (no userId)');
+            return { memberships: [] };
+        }
+        return this.employeeUseCases.getUserMemberships(userId);
+    }
+
+    @Get('export-csv')
+    @ApiOperation({ summary: 'Export employees to CSV (owner or manager)' })
+    async exportEmployeesCsv(
+        @UserDecorator() user,
+        @Query('companyId') companyId: string,
+        @Res() res: Response
+    ) {
+        const csv = await this.employeeUseCases.exportEmployeesCsv(user, companyId);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="employees-${companyId}.csv"`);
+        res.end(csv);
     }
 
     @Get(':id')
@@ -94,18 +114,5 @@ export class EmployeeController {
     @ApiOperation({ summary: 'Import employees from CSV (manager only)' })
     async importEmployeesFromCsv(@UserDecorator() user, @Body() dto: ImportEmployeeCsvDto) {
         return this.employeeUseCases.importEmployeesFromCsv(user, dto);
-    }
-
-    @Get('export-csv')
-    @ApiOperation({ summary: 'Export employees to CSV (manager or accountant)' })
-    async exportEmployeesCsv(
-        @UserDecorator() user,
-        @Query('companyId') companyId: string,
-        @Res() res: Response
-    ) {
-        const csv = await this.employeeUseCases.exportEmployeesCsv(user, companyId);
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename="employees-${companyId}.csv"`);
-        res.end(csv);
     }
 }

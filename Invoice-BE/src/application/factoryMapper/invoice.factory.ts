@@ -185,9 +185,10 @@ export class InvoiceFactory {
     newInvoice.remainingAmount = Number.isFinite(totalToPay) ? totalToPay : 0;
 
     // Set optional client and company references
-    if (createInvoiceDto.clientId) newInvoice.clientId = createInvoiceDto.clientId;
-    if (createInvoiceDto.supplierId) newInvoice.supplierId = createInvoiceDto.supplierId;
-    if (createInvoiceDto.mycompanyId) newInvoice.mycompanyId = createInvoiceDto.mycompanyId;
+    if (createInvoiceDto.clientId) {
+      newInvoice.clientId = new Types.ObjectId(createInvoiceDto.clientId) as any;
+    }
+    if (createInvoiceDto.companyId) newInvoice.companyId = new Types.ObjectId(createInvoiceDto.companyId) as any;
 
     newInvoice.Date = new Date();
     newInvoice.createdAt = new Date();
@@ -257,9 +258,10 @@ export class InvoiceFactory {
     if (updateInvoiceDto.fileUrl) updatedInvoice.fileUrl = updateInvoiceDto.fileUrl;
 
     // Update optional client and company references
-    if (updateInvoiceDto.clientId) updatedInvoice.clientId = updateInvoiceDto.clientId;
-    if (updateInvoiceDto.supplierId) updatedInvoice.supplierId = updateInvoiceDto.supplierId;
-    if (updateInvoiceDto.mycompanyId) updatedInvoice.mycompanyId = updateInvoiceDto.mycompanyId;
+    if (updateInvoiceDto.clientId) {
+      updatedInvoice.clientId = new Types.ObjectId(updateInvoiceDto.clientId) as any;
+    }
+    if (updateInvoiceDto.companyId) updatedInvoice.companyId = new Types.ObjectId(updateInvoiceDto.companyId) as any;
 
     updatedInvoice.updatedAt = new Date();
 

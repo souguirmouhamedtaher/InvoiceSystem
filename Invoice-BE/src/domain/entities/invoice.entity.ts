@@ -3,6 +3,7 @@ import { clientType, invoiceStatus, invoiceType } from '../enums/invoice.enums';
 import { TaxSettings } from './taxesSettings.entity';
 import { Libelle } from './libelle.entity';
 import { Company } from './company.entity';
+import { Client } from './client.entity';
 
 export class Invoice extends Base {
 	username: string;
@@ -25,12 +26,10 @@ export class Invoice extends Base {
 	montantInternational?: number;
 	/** Stamp duty (timbre) in DT, default 1 */
 	timbre?: number;
-	/** Optional reference to Client (Company) */
-	clientId?:  any;
-	/** Optional reference to Supplier (Company) */
-	supplierId?: any;
-	/** Optional reference to MyCompany (Company) */
-	mycompanyId?: any;
+	/** Optional reference to Client */
+	clientId?: Client;
+	/** Reference to Enterprise */
+	companyId: Company;
 	payments?: {
 		amount: number;
 		date: string;

@@ -1,8 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsBoolean } from 'class-validator';
+import { IsMongoId, IsString, IsOptional, IsNumber, IsBoolean } from 'class-validator';
 import { TaxType } from 'src/domain/enums/tax.enums';
 
 export class CreateTaxSettingsDto {
+  @ApiProperty({ description: 'Company ID', example: '64b7c0f1a2b4c3d4e5f67890' })
+  @IsMongoId()
+  companyId: string;
   @ApiProperty({ description: 'Name of the tax setting', example: 'TVA 19%' })
   @IsString()
   name: string;

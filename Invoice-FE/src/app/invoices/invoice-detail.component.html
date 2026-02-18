@@ -119,17 +119,126 @@
     </form>
   </section>
 
-  <a class="ghost" routerLink="/invoices/new">Nouvelle facture</a>
-  <button class="primary" type="button" (click)="downloadPdf()" [disabled]="downloadingPdf()">
-    {{ downloadingPdf() ? 'Telechargement...' : 'Exporter PDF' }}
-  </button>
-  <div class="error" *ngIf="pdfError()">{{ pdfError() }}</div>
-  
-  <button class="secondary" type="button" (click)="downloadXml()" [disabled]="downloadingXml()">
-    {{ downloadingXml() ? 'Telechargement...' : 'Exporter XML (Elfatoora)' }}
-  </button>
-  <div class="error" *ngIf="xmlError()">{{ xmlError() }}</div>
+  <div class="actions">
+    <a class="ghost" routerLink="/invoices/new">Nouvelle facture</a>
+    <button class="primary" type="button" (click)="downloadPdf()" [disabled]="downloadingPdf()">
+      {{ downloadingPdf() ? 'Telechargement...' : 'Exporter PDF' }}
+    </button>
+    <button class="secondary" type="button" (click)="downloadXml()" [disabled]="downloadingXml()">
+      {{ downloadingXml() ? 'Telechargement...' : 'Exporter XML (Elfatoora)' }}
+    </button>
+  </div>
+  <div class="export-errors" *ngIf="pdfError() || xmlError()">
+    <div class="error" *ngIf="pdfError()">{{ pdfError() }}</div>
+    <div class="error" *ngIf="xmlError()">{{ xmlError() }}</div>
+  </div>
+
+  <section class="ttn-simulation">
+    <div class="ttn-header">
+      <div>
+        <h2>Simulation TTN</h2>
+        <p>Soumettez la facture pour une validation simulee.</p>
+      </div>
+      <button class="secondary" type="button" (click)="submitTtnSimulation()" [disabled]="ttnSubmitting()">
+        {{ ttnSubmitting() ? 'Soumission...' : 'Soumettre a TTN' }}
+      </button>
+    </div>
+
+    <div class="ttn-result" *ngIf="ttnResult()">
+      <span class="pill" [class.ok]="ttnResult()?.status === 'ACCEPTED'" [class.ko]="ttnResult()?.status === 'REJECTED'">
+        {{ ttnResult()?.status }}
+      </span>
+      <span *ngIf="ttnResult()?.reference">Reference: {{ ttnResult()?.reference }}</span>
+      <div class="ttn-actions">
+        <button
+          class="ghost"
+          type="button"
+          (click)="downloadSimulationXml('request', ttnResult()!)">
+          XML requete
+        </button>
+        <button
+          class="ghost"
+          type="button"
+          (click)="openSimulationPreview('request', ttnResult()!)">
+          Apercu requete
+        </button>
+        <button
+          class="ghost"
+          type="button"
+          [disabled]="!ttnResult()?.responseXml"
+          (click)="downloadSimulationXml('response', ttnResult()!)">
+          XML reponse
+        </button>
+        <button
+          class="ghost"
+          type="button"
+          [disabled]="!ttnResult()?.responseXml"
+          (click)="openSimulationPreview('response', ttnResult()!)">
+          Apercu reponse
+        </button>
+      </div>
+    </div>
+
+    <div class="ttn-errors" *ngIf="ttnResult()?.errors?.length">
+      <p>Erreurs:</p>
+      <ul>
+        <li *ngFor="let err of ttnResult()?.errors">{{ err }}</li>
+      </ul>
+    </div>
+
+    <div class="error" *ngIf="ttnError()">{{ ttnError() }}</div>
+
+    <div class="history" *ngIf="ttnHistory().length; else noHistory">
+      <h3>Historique</h3>
+      <div class="history-list">
+        <div class="history-row" *ngFor="let sim of ttnHistory()">
+          <span class="pill" [class.ok]="sim.status === 'ACCEPTED'" [class.ko]="sim.status === 'REJECTED'">
+            {{ sim.status }}
+          </span>
+          <span class="ref">{{ sim.reference || '-' }}</span>
+          <span class="date">{{ sim.createdAt || sim.submittedAt }}</span>
+          <div class="ttn-actions">
+            <button class="ghost" type="button" (click)="downloadSimulationXml('request', sim)">
+              XML requete
+            </button>
+            <button class="ghost" type="button" (click)="openSimulationPreview('request', sim)">
+              Apercu requete
+            </button>
+            <button
+              class="ghost"
+              type="button"
+              [disabled]="!sim.responseXml"
+              (click)="downloadSimulationXml('response', sim)">
+              XML reponse
+            </button>
+            <button
+              class="ghost"
+              type="button"
+              [disabled]="!sim.responseXml"
+              (click)="openSimulationPreview('response', sim)">
+              Apercu reponse
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noHistory>
+      <div class="empty">Aucune simulation enregistree.</div>
+    </ng-template>
+  </section>
 </section>
+
+<div class="xml-preview" *ngIf="showXmlPreview()">
+  <div class="xml-backdrop" (click)="closeSimulationPreview()"></div>
+  <div class="xml-dialog" role="dialog" aria-modal="true">
+    <header>
+      <h3>{{ previewXmlTitle() }}</h3>
+      <button class="ghost" type="button" (click)="closeSimulationPreview()">Fermer</button>
+    </header>
+    <pre>{{ previewXmlContent() }}</pre>
+  </div>
+</div>
 
 <ng-template #loading>
   <section class="invoice-detail">

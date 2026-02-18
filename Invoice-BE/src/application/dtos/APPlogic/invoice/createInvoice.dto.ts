@@ -103,13 +103,7 @@ export class CreateInvoiceDto {
   @IsString()
   clientId?: string;
 
-  @ApiPropertyOptional({ description: 'Supplier ID (ObjectId string) - optional reference to supplier', example: '64b7c0f1a2b4c3d4e5f67900' })
-  @IsOptional()
+  @ApiProperty({ description: 'Enterprise Company ID (ObjectId string)', example: '64b7c0f1a2b4c3d4e5f67893' })
   @IsString()
-  supplierId?: string;
-
-  @ApiPropertyOptional({ description: 'My Company ID (ObjectId string) - optional reference to company', example: '64b7c0f1a2b4c3d4e5f67893' })
-  @IsOptional()
-  @IsString()
-  mycompanyId?: string;
+  companyId: string;
 }

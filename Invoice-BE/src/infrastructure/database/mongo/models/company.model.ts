@@ -1,26 +1,19 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { companyType } from 'src/domain/enums/company.enums';
 import { User } from './user.model';
 
 export type CompanyDocument = Company & Document;
 
   
-@Schema()
+@Schema({ collection: 'companies' })
 export class Company {
     _id: Types.ObjectId
 
     @Prop({ type: Types.ObjectId, ref: User.name, required: true })
     userId: User;
     
-   @Prop()
+    @Prop({ required: true })
     companyname : string;
-
-    @Prop({enum:companyType})
-    companyType: companyType;
-
-    @Prop()
-    logo: string;
 
     @Prop()
     Patente: string;
@@ -38,45 +31,37 @@ export class Company {
     bankBIC: string;
 
     @Prop()
+    bankAccountNumber?: string;
+
+    @Prop()
+    bankOwnerIdentifier?: string;
+
+    @Prop()
+    bankInstitutionCode?: string;
+
+    @Prop()
+    bankInstitutionName?: string;
+
+    @Prop()
+    bankBranchCode?: string;
+
+    @Prop()
+    bankCountry?: string;
+
+    @Prop({ required: true })
     address: string;
 
-    @Prop()
+    @Prop({ required: true })
     email: string;
 
-    @Prop()
+    @Prop({ type: [String], default: [] })
     phones: string[];
-    
-    @Prop()
-    ResponsibleName: string;
-
-    @Prop()
-    ResponsibleEmail: string;
-
-    @Prop()
-    ResponsiblePhone: string;
-
-
-    @Prop()
-    companySector: string;
-   
-
-    @Prop()
-    companySubSector: string;
-
-    @Prop()
-    supplierType: string;
-
-    @Prop()
-    accountingEmail: string;
-
-    @Prop()
-    vatIncluded: boolean;
         
     @Prop()
-    country: string;
+    region: string;
 
     @Prop()
-    city: string;
+    country: string;
 
     @Prop()
     notes: string;

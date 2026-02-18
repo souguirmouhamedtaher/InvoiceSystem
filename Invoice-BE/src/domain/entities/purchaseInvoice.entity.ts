@@ -4,6 +4,7 @@ import { paymentType, clientType } from '../enums/invoice.enums';
 export class PurchaseInvoice extends Base {
     invoiceName: string;
     companyId: any; // Reference to Company
+    supplierId: any; // Reference to Supplier
     date: string;
     amountHT: string;
     tva: string;

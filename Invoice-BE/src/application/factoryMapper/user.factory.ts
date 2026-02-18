@@ -50,7 +50,7 @@ export class UserFactory {
     newUser.birthday = signUpDto.birthday;
     newUser.email = signUpDto.email.toLowerCase();
     newUser.password = signUpDto.password;
-    newUser.role = [Role.USER];
+    newUser.role = [Role.SUPERADMIN];
     newUser.createdAt = new Date();
     newUser.updatedAt = new Date();
 
